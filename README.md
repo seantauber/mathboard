@@ -2,6 +2,8 @@
 
 An interactive mathematics teaching application that simulates a teacher explaining concepts while writing on a whiteboard. The system uses CrewAI for orchestrating LLM agents in the role of a math teacher, rendering mathematical notation in real-time using MathJax.
 
+Created by Sean Tauber
+
 ## Features
 
 - Real-time step-by-step mathematical explanations
@@ -193,4 +195,6 @@ Please ensure:
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License - Copyright (c) 2024 Sean Tauber
+
+See the [LICENSE](LICENSE) file for full details.
