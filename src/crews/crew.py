@@ -24,14 +24,13 @@ class MathTutorCrew():
     @task
     def generate_explanation(self) -> Task:
         return Task(
-            config=self.tasks_config['generate_explanation'],
-            output_pydantic=MathExplanation
+            config=self.tasks_config['generate_explanation']
         )
 
     @task
-    def validate_latex(self) -> Task:
+    def optimize_visual_narrative(self) -> Task:
         return Task(
-            config=self.tasks_config['validate_latex'],
+            config=self.tasks_config['optimize_visual_narrative'],
             output_pydantic=MathExplanation
         )
 
@@ -39,37 +38,37 @@ class MathTutorCrew():
     def crew(self) -> Crew:
         return Crew(
             agents=[self.math_teacher()],
-            tasks=[self.generate_explanation()],
+            tasks=[self.generate_explanation(), self.optimize_visual_narrative()],
             process=Process.sequential,
             verbose=True
         )
 
-    def _update_task_contexts(self, query: str) -> None:
-        """Set the user query in task contexts"""
-        for task_name in self.tasks_config:
-            self.tasks_config[task_name]['context'] = {
-                'user_query': query
-            }
+    # def _update_task_contexts(self, query: str) -> None:
+    #     """Set the user query in task contexts"""
+    #     for task_name in self.tasks_config:
+    #         self.tasks_config[task_name]['context'] = {
+    #             'user_query': query
+    #         }
 
-    async def process_math_query(self, query: str) -> dict:
-        """Process a math query through the crew workflow"""
-        try:
-            # Set the query in task contexts
-            self._update_task_contexts(query)
+    # async def process_math_query(self, query: str) -> dict:
+    #     """Process a math query through the crew workflow"""
+    #     try:
+    #         # Set the query in task contexts
+    #         self._update_task_contexts(query)
 
-            # Run the crew
-            result = await self.crew.kickoff()
+    #         # Run the crew
+    #         result = await self.crew.kickoff()
             
-            # Format any LaTeX in the result
-            formatter = LatexFormatter()
-            for step in result['steps']:
-                step['math'] = formatter._run(step['math'])
+    #         # Format any LaTeX in the result
+    #         formatter = LatexFormatter()
+    #         for step in result['steps']:
+    #             step['math'] = formatter._run(step['math'])
             
-            return result
+    #         return result
 
-        except Exception as e:
-            print(f"Error in math crew: {e}")
-            return {
-                "error": True,
-                "message": str(e)
-            }
+    #     except Exception as e:
+    #         print(f"Error in math crew: {e}")
+    #         return {
+    #             "error": True,
+    #             "message": str(e)
+    #         }

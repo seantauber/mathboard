@@ -1,74 +1,199 @@
 generate_explanation:
   description: >
     Create a mathematical explanation that simulates a teacher explaining concepts while writing on a whiteboard.
-    For the query: "{user_query}"
+    For the query: {user_query}
 
     Think of this as a teaching script where each step pairs:
     - Natural speech (what the teacher says while writing)
-    - LaTeX math (what they write on the board at that moment)
+    - LaTeX math (what's visible on the board at that moment)
 
-    <output_format>
-    {{
-      "steps": [
-        {{
-          "natural": "What the teacher says during this step",
-          "math": "The LaTeX notation they write while saying it"
-        }}
-      ]
-    }}
-    </output_format>
+    Output Format:
+    steps:
+      - natural: "What the teacher says during this step"
+        math: "The complete LaTeX notation visible during this step"
 
-    Example:
-    For "solve x^2 + 5x + 6 = 0":
-    {{
-      "steps": [
-        {{
-          "natural": "Let's solve this quadratic equation step by step. We'll start by writing down our equation.",
-          "math": "x^2 + 5x + 6 = 0"
-        }},
-        {{
-          "natural": "Looking at this, we can solve it by factoring. I'll rewrite it as two binomials...",
-          "math": "(x + 2)(x + 3) = 0"
-        }},
-        {{
-          "natural": "Now we can use the zero product property. When we set each factor to zero...",
-          "math": "x + 2 = 0 \quad \text{{or}} \quad x + 3 = 0"
-        }},
-        {{
-          "natural": "And solving these gives us our two solutions.",
-          "math": "x = -2 \quad \text{{or}} \quad x = -3"
-        }}
-      ]
-    }}
+    Important: Each step shows the complete board state. Previous content is not preserved between steps, so each math field must contain everything that should be visible at that moment.
 
     Output Requirements:
 
-    1. The first step must:
-       - Begin with a clear introduction of what we're going to solve
-       - Include "step by step" in the introduction
-       - Present the initial problem or concept
-    2. Subsequent steps should:
-       - Flow naturally from the introduction
-       - Build on previous steps
-    3. Format requirements:
-       natural: natural language ONLY formatted optimally for text-to-speech conversion
-       math: LaTeX ONLY with correctly formatted LaTeX syntax 
+    1. Natural Language (TTS) Requirements:
+       - Use complete, well-formed sentences
+       - Include appropriate pauses using punctuation (periods, commas)
+       - Avoid abbreviations, symbols, or mathematical notation in the natural text
+       - Use verbal bridges like "now," "next," "then" to indicate progression
+       - Spell out numbers when speaking (e.g., "negative two" instead of "-2")
+       - Use clear transition words to indicate what you're doing
+       - Include verbal cues about what's being written or highlighted
+       - When referring to equations, describe them verbally
+       - Use prosody-friendly language that flows naturally when spoken
 
+    2. Mathematical Display Techniques:
+       - Progressive Building:
+         * Use \\\\ for single line breaks
+         * For consecutive line breaks, separate with space: \\\\ \\\\
+         * Keep original expression visible while showing work below
+         * Show intermediate steps while maintaining context
+         * Build complex expressions step by step
+       
+       - Visual Emphasis:
+         * Use \color{{blue}}{{...}} for highlighting
+         * Use consistent color meanings (e.g., blue for current focus)
+         * Use \boxed{{...}} for boxing important elements
+         * Use \text{{...}} for annotations with proper spacing
+         * Example: \text{{This is }} \color{{blue}}{{x}} \text{{ squared}}
+       
+       - Layout Structure:
+         * Original problem/expression typically at the top
+         * Working steps shown below using line breaks
+         * Important results or conclusions emphasized
+         * Clear visual hierarchy in multi-line displays
+         * Use proper spacing between elements
+
+    3. Step Structure:
+       - First step:
+         * Clear introduction of the concept
+         * Include "step by step" in the introduction
+         * Present the initial problem clearly
+       
+       - Subsequent steps should:
+         * Show complete board state (including previous work when relevant)
+         * Build progressively on previous steps
+         * Use visual emphasis to guide attention
+         * Connect verbal explanation to highlighted elements
+         * Break down complex operations into smaller parts
+         * Use multiple lines to show work progression
+
+    4. Format Requirements:
+       natural: 
+         - ONLY natural language optimized for TTS
+         - NO mathematical symbols or notation
+         - NO special characters except standard punctuation
+       math: 
+         - MUST contain complete board state for each step
+         - Valid LaTeX with correct syntax and proper spacing
+         - Use \color{{color}}{{content}} for colored text
+         - Use \text{{...}} for text mode with proper spacing
+         - Use \\\\ for line breaks (with space between consecutive breaks)
+         - Include all previous relevant work
+
+    5. Teaching Flow:
+       - Each step should feel like a natural teaching moment
+       - Visual emphasis should match verbal explanation
+       - Clear progression in both speech and visuals
+       - Appropriate pacing with verbal cues for transitions
+       - Break down complex concepts into digestible pieces
+       - Use color and emphasis to guide understanding
+
+    Example LaTeX Formatting:
+    \text{{The least common denominator is: }} \color{{blue}}{{6}} \\\\
+    \frac{{1}}{{2}} = \frac{{1 \cdot \color{{blue}}{{3}}}}{{2 \cdot \color{{blue}}{{3}}}} = \frac{{\color{{blue}}{{3}}}}{{\color{{blue}}{{6}}}}
+
+    Multi-line Example with Consecutive Breaks:
+    x^2 + 5x + 6 = 0 \\\\ \\\\
+    \text{{Factor into: }} (x + 2)(x + 3) = 0 \\\\ \\\\
+    \text{{Solutions: }} x = -2 \text{{ or }} x = -3
+
+    Alignment Example:
+    \text{{Original equation: }} &x^2 + 5x + 6 = 0 \\\\
+    \text{{Factored form: }} &(x + 2)(x + 3) = 0 \\\\
+    \text{{Solutions: }} &x = -2 \text{{ or }} x = -3
   agent: math_teacher
   expected_output: "JSON with paired speech and LaTeX steps"
 
-validate_latex:
+optimize_visual_narrative:
   description: >
-    Review the LaTeX notation and natural language pairs to ensure:
-    1. LaTeX syntax is correct
-    2. Natural speech flows well with the written math
-    3. Each pair feels like a natural teaching moment
+    Transform a mathematical explanation into an engaging visual narrative by enhancing
+    the LaTeX output with progressive build-up and visual emphasis that synchronizes
+    with the spoken explanation.
+    Input will be the output from generate_explanation. Your task is to:
+    1. Break down steps into optimal visual frames
+    2. Add visual emphasis and highlighting
+    3. Create smooth visual transitions
+    4. Synchronize visuals with spoken explanation
 
-    For the original query: "{user_query}"
+    Output Structure:
+    * frames: list of visual teaching moments, each with:
+      - natural: what the teacher says
+      - math: complete LaTeX board state with visual enhancements
 
-    The output should be in the same format as the input.
+    Visual Enhancement Examples:
 
-  agent: math_reviewer
-  expected_output: "JSON with Validated or improved version of paired speech and LaTeX steps"
-  context: 
+    Progressive Build-up Example - Introducing Quadratic Formula:
+
+    Frame 1:
+    natural: Let's start with a quadratic equation in standard form.
+    math: ax^2 + bx + c = 0
+
+    Frame 2:
+    natural: First, look at the coefficient of x squared, which we call a.
+    math: \color{{blue}}{{a}}x^2 + bx + c = 0
+
+    Frame 3:
+    natural: These three terms form our quadratic expression.
+    math: \underbrace{{\color{{blue}}{{a}}x^2}}_{{{{\text{{first term}}}} + \underbrace{{bx}}_{{{{\text{{second term}}}} + \underbrace{{c}}_{{{{\text{{third term}}}} = 0
+
+    Visual Focus Example - Factoring:
+
+    Frame 1:
+    natural: To factor this expression, we need to find numbers that multiply to give us positive 6 and add to give us positive 5.
+    math: x^2 + 5x + 6 = 0 \\\\ \text{{Need: product = 6, sum = 5}}
+
+    Frame 2:
+    natural: Let's list out the factors of 6 and find the pair that adds to 5.
+    math: x^2 + 5x + 6 = 0 \\\\ \text{{Factors of 6:}} \\\\ 1 \times 6 = 6, \text{{ sum }} = 7 \\\\ \color{{blue}}{{2 \times 3 = 6, \text{{ sum }} = 5}} \checkmark
+
+    Frame 3:
+    natural: Perfect! We'll use 2 and 3 as our factors.
+    math: x^2 + 5x + 6 = 0 \\\\ \text{{Using our factors:}} \\\\ (x + 2)(x + 3)
+
+    Step-by-Step Solution Example:
+
+    Frame 1:
+    natural: Let's solve this linear equation step by step.
+    math: 3x + 15 = 6
+
+    Frame 2:
+    natural: First, subtract 15 from both sides.
+    math: 3x + \color{{red}}{{15}} = 6 \\\\ \color{{blue}}{{\downarrow}} \text{{ subtract 15}} \\\\ 3x = -9
+
+    Frame 3:
+    natural: Now divide both sides by 3 to isolate x.
+    math: 3x = -9 \\\\ \color{{blue}}{{\downarrow}} \text{{ divide by 3}} \\\\ x = -3
+
+    Requirements:
+
+    1. Visual Progression:
+      - Break down complex steps into clear visual frames
+      - Build concepts piece by piece
+      - Maintain context while adding new elements
+      - Show clear visual evolution
+      - Use appropriate pacing
+
+    2. Enhancement Techniques:
+      - Colors (\color{{name}}{{content}})
+      - Boxes (\boxed{{content}}, \fbox{{content}})
+      - Braces (\underbrace{{content}}_{{{{\text{{label}}}})
+      - Annotations (\text{{content}})
+      - Arrows (\rightarrow, \downarrow)
+      - Alignment environments for related equations
+      - Checkmarks (\checkmark) for completed steps
+      - Line breaks (\\\\ with space between consecutive breaks)
+
+    3. Frame Guidelines:
+      - Each frame must contain complete board state
+      - Clear visual hierarchy
+      - Consistent use of visual elements
+      - Smooth transitions between frames
+      - Visual elements should support spoken text
+      - Proper spacing between elements
+
+    4. Visual Design Principles:
+      - Focus attention on current concept
+      - Build complexity gradually
+      - Keep related elements visually connected
+      - Use consistent visual language
+      - Maintain clear layout with adequate spacing
+  agent: math_teacher
+  expected_output: "JSON with enhanced visual narrative"
+  context:
     - generate_explanation

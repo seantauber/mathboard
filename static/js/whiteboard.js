@@ -1,128 +1,165 @@
-import MathboardSocket from './socket.js';
+// Import helper functions
 import { formatLatex, validateLatex, insertLatexSymbol } from './latex-helpers.js';
 
-class Whiteboard {
-    constructor() {
-        this.socket = new MathboardSocket();
-        this.currentInput = '';
-        this.history = [];
-        this.historyIndex = -1;
-        this.initializeElements();
-        this.setupEventListeners();
+// Initialize socket connection
+const socket = io();
+
+// DOM Elements
+const mathInput = document.getElementById('mathInput');
+const askButton = document.getElementById('askButton');
+const mathWhiteboard = document.getElementById('mathWhiteboard');
+const explanationDisplay = document.getElementById('explanationDisplay');
+const nextStepButton = document.getElementById('nextStepButton');
+const errorDisplay = document.getElementById('errorDisplay');
+const quickQuestions = document.querySelectorAll('.quick-question');
+const mathSymbols = document.querySelectorAll('.math-symbol');
+
+// State management
+let currentStep = 0;
+let steps = [];
+
+// Socket event handlers
+socket.on('connect', () => {
+    console.log('Connected to server');
+});
+
+socket.on('display_step', (data) => {
+    console.group('=== Received Step Data ===');
+    console.log('Natural:', data.natural);
+    console.log('Math LaTeX (raw):', data.math);
+    console.log('Math LaTeX (escaped):', JSON.stringify(data.math));
+    console.groupEnd();
+    
+    // Add step to queue
+    steps.push(data);
+    
+    // If this is the first step, display it immediately
+    if (steps.length === 1) {
+        displayCurrentStep();
+    } else {
+        // Enable next step button if there are more steps
+        nextStepButton.disabled = false;
     }
+});
 
-    initializeElements() {
-        this.inputElement = document.getElementById('mathInput');
-        this.mathWhiteboard = document.getElementById('mathWhiteboard');
-        this.explanationDisplay = document.getElementById('explanationDisplay');
-        this.nextStepButton = document.getElementById('nextStepButton');
-    }
-
-    setupEventListeners() {
-        if (this.inputElement) {
-            // Input handling
-            this.inputElement.addEventListener('input', this.handleInput.bind(this));
-            this.inputElement.addEventListener('keydown', this.handleKeyPress.bind(this));
-        }
-
-        // Next step button
-        if (this.nextStepButton) {
-            this.nextStepButton.addEventListener('click', () => {
-                this.socket.nextStep();
-            });
-        }
-
-        // Math symbols
-        document.querySelectorAll('.math-symbol').forEach(symbol => {
-            symbol.addEventListener('click', (e) => {
-                this.insertSymbol(e.target.dataset.symbol);
-            });
-        });
-
-        // Quick questions
-        document.querySelectorAll('.quick-question').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const question = e.target.dataset.question;
-                if (this.inputElement) {
-                    this.inputElement.value = question;
-                    this.sendQuery(question);
-                }
-            });
-        });
-    }
-
-    async handleInput(event) {
-        this.currentInput = event.target.value;
+// Display current step
+function displayCurrentStep() {
+    if (currentStep < steps.length) {
+        const step = steps[currentStep];
         
-        // Update preview if valid LaTeX
-        if (validateLatex(this.currentInput)) {
-            this.updatePreview(this.currentInput);
-        }
-    }
-
-    handleKeyPress(event) {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-            this.sendQuery(this.currentInput);
-        }
-    }
-
-    async sendQuery(query) {
+        // Display natural language explanation
+        explanationDisplay.textContent = step.natural;
+        
+        // Display math content
+        console.group('=== Displaying Math Content ===');
+        console.log('Raw LaTeX:', step.math);
+        console.log('LaTeX with newlines escaped:', JSON.stringify(step.math));
+        
         try {
-            await this.socket.sendMathQuery(query);
-            this.updateHistory(query);
+            mathWhiteboard.innerHTML = '';
+            const mathElement = document.createElement('div');
+            mathElement.textContent = step.math;
+            mathWhiteboard.appendChild(mathElement);
+            
+            console.log('Math element created');
+            console.log('textContent:', mathElement.textContent);
+            console.log('innerHTML before MathJax:', mathElement.innerHTML);
+            
+            // Trigger MathJax processing
+            if (window.MathJax) {
+                console.log('Processing with MathJax...');
+                window.MathJax.typesetPromise([mathWhiteboard]).then(() => {
+                    console.log('MathJax processing complete');
+                    console.log('Final rendered HTML:', mathWhiteboard.innerHTML);
+                    // Log the computed styles to see if newlines are being rendered
+                    const mathJaxOutput = mathWhiteboard.querySelector('.MathJax');
+                    if (mathJaxOutput) {
+                        console.log('MathJax output element:', mathJaxOutput);
+                        console.log('MathJax SVG content:', mathJaxOutput.innerHTML);
+                    }
+                }).catch((err) => {
+                    console.error('MathJax processing error:', err);
+                });
+            } else {
+                console.error('MathJax not loaded');
+            }
         } catch (error) {
-            console.error('Error sending query:', error);
-            this.socket.showError(error.message);
+            console.error('Error displaying math:', error);
+            errorDisplay.textContent = 'Error displaying mathematical content';
         }
-    }
-
-    updatePreview(latex) {
-        if (this.mathWhiteboard) {
-            const formattedLatex = formatLatex(latex);
-            this.mathWhiteboard.innerHTML = formattedLatex;
-            MathJax.typesetPromise([this.mathWhiteboard]).catch(err => {
-                console.error('MathJax error:', err);
-            });
-        }
-    }
-
-    updateHistory(input) {
-        this.history.push(input);
-        this.historyIndex = this.history.length;
-    }
-
-    insertSymbol(symbol) {
-        if (this.inputElement) {
-            insertLatexSymbol(this.inputElement, symbol);
-            this.currentInput = this.inputElement.value;
-            this.handleInput({ target: this.inputElement });
-        }
-    }
-
-    clearBoard() {
-        if (this.inputElement) {
-            this.inputElement.value = '';
-            this.currentInput = '';
-        }
-        if (this.mathWhiteboard) {
-            this.mathWhiteboard.innerHTML = '';
-        }
-        if (this.explanationDisplay) {
-            this.explanationDisplay.innerHTML = `
-                <div class="welcome-message">
-                    <h3>Welcome to Interactive Math Learning!</h3>
-                    <p>Ask a math question above to get started.</p>
-                    <p>You'll receive step-by-step explanations with both text and mathematical notation.</p>
-                </div>
-            `;
-        }
+        console.groupEnd();
     }
 }
 
-// Initialize whiteboard when document is ready
-document.addEventListener('DOMContentLoaded', () => {
-    window.whiteboard = new Whiteboard();
+// Event Listeners
+askButton.addEventListener('click', () => {
+    const query = mathInput.value.trim();
+    if (query) {
+        // Reset state
+        steps = [];
+        currentStep = 0;
+        mathWhiteboard.innerHTML = '';
+        explanationDisplay.textContent = '';
+        nextStepButton.disabled = true;
+        
+        // Show loading state
+        document.querySelector('.loading-spinner').style.display = 'block';
+        
+        // Send request
+        socket.emit('request_math', { prompt: query });
+        
+        // Clear input
+        mathInput.value = '';
+    }
 });
 
-export default Whiteboard;
+mathInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        askButton.click();
+    }
+});
+
+nextStepButton.addEventListener('click', () => {
+    if (currentStep < steps.length - 1) {
+        currentStep++;
+        displayCurrentStep();
+        
+        // Disable button if we're at the last step
+        if (currentStep === steps.length - 1) {
+            nextStepButton.disabled = true;
+        }
+    }
+});
+
+// Quick questions functionality
+quickQuestions.forEach(button => {
+    button.addEventListener('click', () => {
+        mathInput.value = button.dataset.question;
+        askButton.click();
+    });
+});
+
+// Math symbols functionality
+mathSymbols.forEach(symbol => {
+    symbol.addEventListener('click', () => {
+        insertLatexSymbol(mathInput, symbol.dataset.symbol);
+    });
+});
+
+// Error handling
+socket.on('connect_error', (error) => {
+    console.error('Connection error:', error);
+    errorDisplay.textContent = 'Connection error. Please try again.';
+});
+
+socket.on('error', (error) => {
+    console.error('Socket error:', error);
+    errorDisplay.textContent = 'An error occurred. Please try again.';
+});
+
+// Log MathJax configuration when loaded
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.MathJax) {
+        console.log('MathJax configuration:', window.MathJax.config);
+    }
+});

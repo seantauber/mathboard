@@ -8,6 +8,7 @@ math_teacher:
     representations using mathematical notation.
   verbose: true
   allow_delegation: false
+  llm: gpt-4o
 
 math_reviewer:
   role: "Math Reviewer"
@@ -18,3 +19,4 @@ math_reviewer:
     experience in technical documentation and mathematical typesetting.
   verbose: true
   allow_delegation: false
+  llm: gpt-4o
