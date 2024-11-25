@@ -1,0 +1,18 @@
+# Core dependencies
+flask
+flask-socketio
+crewai
+langchain
+openai
+python-dotenv
+pydantic
+pyyaml
+typing-extensions
+redis
+# Development dependencies (optional)
+pytest
+pytest-asyncio
+pytest-cov
+black
+isort
+flake8

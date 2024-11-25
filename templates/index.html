@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Math Learning</title>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mathboard.css') }}">
+    
+    <!-- MathJax Configuration -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                packages: ['base', 'ams', 'noerrors', 'noundefined']
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            },
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady().then(() => {
+                        console.log('MathJax initial typesetting complete');
+                    });
+                }
+            },
+            loader: {
+                load: ['[tex]/ams', '[tex]/noerrors', '[tex]/noundefined']
+            }
+        };
+    </script>
+    <!-- Load MathJax -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Interactive Math Learning</h1>
+            <p class="header-subtitle">Learn mathematics step by step with detailed explanations</p>
+        </header>
+
+        <main class="app-content">
+            <div class="learning-container">
+                <!-- Question Input Section -->
+                <section class="question-section">
+                    <div class="input-wrapper">
+                        <input type="text" id="mathInput" class="math-input" 
+                               placeholder="Ask a math question (e.g., 'How do you add fractions?')">
+                        <button id="askButton" class="ask-button">Ask</button>
+                    </div>
+                    
+                    <!-- Quick Questions -->
+                    <div class="quick-questions">
+                        <h3>Try these questions:</h3>
+                        <button class="quick-question" data-question="How do you add fractions?">Adding Fractions</button>
+                        <button class="quick-question" data-question="How do you solve quadratic equations?">Quadratic Equations</button>
+                        <button class="quick-question" data-question="What is the Pythagorean theorem?">Pythagorean Theorem</button>
+                    </div>
+                </section>
+
+                <!-- Math Tools Section -->
+                <section class="tools-section">
+                    <h2>Math Tools</h2>
+                    <div class="math-symbols">
+                        <span class="math-symbol" data-symbol="+">+</span>
+                        <span class="math-symbol" data-symbol="-">−</span>
+                        <span class="math-symbol" data-symbol="\times">×</span>
+                        <span class="math-symbol" data-symbol="\div">÷</span>
+                        <span class="math-symbol" data-symbol="\sqrt{}">√</span>
+                        <span class="math-symbol" data-symbol="\frac{}{}">⅟</span>
+                        <span class="math-symbol" data-symbol="\sum">Σ</span>
+                        <span class="math-symbol" data-symbol="\int">∫</span>
+                    </div>
+                </section>
+
+                <!-- Split Display Section -->
+                <section class="display-section">
+                    <div class="display-container">
+                        <!-- Math Display -->
+                        <div class="math-display-section">
+                            <h2>Math Whiteboard</h2>
+                            <div id="mathWhiteboard" class="math-whiteboard"></div>
+                        </div>
+
+                        <!-- Explanation Display -->
+                        <div class="explanation-display-section">
+                            <h2>Explanation</h2>
+                            <div id="explanationDisplay" class="explanation-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Step Control -->
+                    <div class="step-control">
+                        <button id="nextStepButton" class="next-step-button" disabled>Next Step</button>
+                    </div>
+                    
+                    <!-- Loading Indicator -->
+                    <div class="loading-spinner"></div>
+                    
+                    <!-- Error Display -->
+                    <div id="errorDisplay" class="error-message"></div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Custom Scripts -->
+    <script type="module" src="{{ url_for('static', filename='js/latex-helpers.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/socket.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/whiteboard.js') }}"></script>
+</body>
+</html>
