@@ -1,6 +1,4 @@
-# MathTutor Crew
-
-# Math Whiteboard
+# MathBoard
 
 An interactive mathematics teaching application that simulates a teacher explaining concepts while writing on a whiteboard. The system uses CrewAI for orchestrating LLM agents in the roles of teacher and reviewer, rendering mathematical notation in real-time using MathJax.
 
