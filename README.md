@@ -1,14 +1,14 @@
 # MathBoard
 
-An interactive mathematics teaching application that simulates a teacher explaining concepts while writing on a whiteboard. The system uses CrewAI for orchestrating LLM agents in the roles of teacher and reviewer, rendering mathematical notation in real-time using MathJax.
+An interactive mathematics teaching application that simulates a teacher explaining concepts while writing on a whiteboard. The system uses CrewAI for orchestrating LLM agents in the role of a math teacher, rendering mathematical notation in real-time using MathJax.
 
-## Core Concept
+## Features
 
-The application creates an interactive experience where:
-1. A teacher explains mathematical concepts verbally
-2. While simultaneously writing mathematical notation
-3. Each step pairs natural speech with LaTeX notation
-4. Content renders in real-time on a whiteboard interface
+- Real-time step-by-step mathematical explanations
+- Natural teaching flow with synchronized text and mathematical notation
+- Interactive whiteboard interface with MathJax rendering
+- Quick access to common mathematical symbols
+- Support for a wide range of mathematical topics
 
 ## Project Structure
 
@@ -20,26 +20,23 @@ mathboard/
 │   │   │   ├── agents.yaml     # Agent role definitions
 │   │   │   └── tasks.yaml      # Task descriptions and formats
 │   │   ├── tools/
-│   │   │   └── latex_tools.py  # LaTeX formatting tools
+│   │   │   ├── latex_tools.py      # LaTeX formatting tools
+│   │   │   └── explanation_tools.py # Explanation validation
 │   │   └── crew.py            # CrewAI implementation
 │   │
 │   ├── utils/
 │   │   └── latex_utils.py     # LaTeX security and formatting
 │   │
-│   ├── models/                # Pydantic models (if needed)
-│   │   └── math.py           # Data structures
-│   │
-│   └── config/
-│       └── settings.py        # Application settings
+│   └── models/
+│       └── math_models.py     # Pydantic data models
 │
 ├── static/
 │   ├── css/
-│   │   ├── styles.css        # Base styles
-│   │   └── mathboard.css     # Whiteboard specific styles
+│   │   └── styles.css         # Application styles
 │   └── js/
-│       ├── socket.js         # WebSocket handling
-│       ├── mathjax-config.js # MathJax configuration
-│       └── whiteboard.js     # UI interaction logic
+│       ├── socket.js          # WebSocket handling
+│       ├── latex-helpers.js   # LaTeX utility functions
+│       └── whiteboard.js      # UI interaction logic
 │
 ├── templates/
 │   └── index.html            # Main interface template
@@ -48,160 +45,151 @@ mathboard/
 └── requirements.txt          # Python dependencies
 ```
 
-## Key Components
-
-### 1. CrewAI Setup
-
-The system uses two agents:
-- **Math Teacher**: Generates step-by-step explanations
-- **Math Reviewer**: Validates and improves content
-
-Tasks are defined in `crews/config/tasks.yaml`:
-- `generate_explanation`: Creates teaching script with speech/math pairs
-- `validate_latex`: Ensures correct notation and natural flow
-
-### 2. Frontend
-
-The interface uses:
-- MathJax for LaTeX rendering
-- WebSocket for real-time updates
-- Responsive whiteboard design
-
-### 3. Data Flow
-
-1. User submits query via WebSocket
-2. CrewAI processes through agents:
-   ```python
-   {
-     "steps": [
-       {
-         "natural": "What the teacher says",
-         "math": "LaTeX they write"
-       }
-     ]
-   }
-   ```
-3. Response renders on whiteboard
-
 ## Setup
 
-1. Install dependencies:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/mathboard.git
+   cd mathboard
+   ```
+
+2. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
 
-2. Configure environment:
-   ```python
-   # Required environment variables
+3. Set up environment variables:
+   ```bash
+   # Create a .env file with:
    OPENAI_API_KEY=your_key_here
    ```
 
-3. Run the application:
+4. Run the application:
    ```bash
    python app.py
    ```
 
-## Development Guidelines
+5. Open in your browser:
+   ```
+   http://localhost:8000
+   ```
 
-### Adding New Mathematical Capabilities
+## How It Works
 
-1. Update `tasks.yaml` with new output formats
-2. Extend agent configurations in `agents.yaml`
-3. Add any new tools in `crews/tools/`
+### Backend Components
 
-### Working with CrewAI
+1. **CrewAI Agent**: 
+   - Generates step-by-step mathematical explanations
+   - Formats content for natural teaching flow
+   - Ensures proper LaTeX notation
 
-- Tasks use variable interpolation:
-  ```yaml
-  description: "Process query: {user_query}"
-  ```
-- Agents are decorated with `@agent`
-- Tasks are decorated with `@task`
+2. **Flask Server**:
+   - Handles WebSocket connections
+   - Manages real-time communication
+   - Formats and validates content
 
-### Frontend Modifications
+### Frontend Components
 
-1. MathJax Configuration:
-   - Configure in `static/js/mathjax-config.js`
-   - Use double dollars for display math: `$$...$$`
+1. **Interactive Interface**:
+   - Math symbol toolbar for quick access
+   - Split view with whiteboard and explanation
+   - Real-time step progression
 
-2. WebSocket Events:
-   - `request_math`: Send queries
-   - `math_response`: Receive formatted content
+2. **WebSocket Events**:
+   ```javascript
+   // Send query
+   socket.emit('request_math', {
+     prompt: "How do you add fractions?"
+   });
 
-### Security
+   // Receive steps
+   socket.on('display_step', function(data) {
+     // data.natural = Teacher's explanation
+     // data.math = LaTeX notation
+   });
+   ```
 
-- LaTeX sanitization happens in `utils/latex_utils.py`
-- Dangerous commands are stripped
-- All input is validated before processing
+### Data Flow
 
-## Testing
+1. User submits a mathematical question
+2. CrewAI processes the query and generates steps
+3. Each step contains:
+   ```python
+   {
+     "natural": "Teacher's explanation for this step",
+     "math": "LaTeX mathematical notation"
+   }
+   ```
+4. Steps are sent via WebSocket and rendered in real-time
 
-Run tests with:
-```bash
-pytest tests/
-```
+## Development
+
+### Adding New Features
+
+1. **Backend Changes**:
+   - Add new tools in `src/crews/tools/`
+   - Update task configurations in `tasks.yaml`
+   - Modify agent behavior in `crew.py`
+
+2. **Frontend Changes**:
+   - Update UI components in `index.html`
+   - Modify styles in `styles.css`
+   - Add JavaScript functionality in respective files
+
+### Working with LaTeX
+
+1. **Formatting**:
+   - Use `\\[` and `\\]` for display math
+   - Ensure proper escaping of special characters
+   - Follow MathJax syntax guidelines
+
+2. **Validation**:
+   - LaTeX is sanitized in `latex_utils.py`
+   - Dangerous commands are stripped
+   - Syntax is validated before rendering
+
+### WebSocket Communication
+
+1. **Events**:
+   - `request_math`: Send mathematical queries
+   - `display_step`: Receive formatted steps
+
+2. **Step Format**:
+   ```python
+   {
+     "natural": str,  # Clear, natural language explanation
+     "math": str      # Properly formatted LaTeX
+   }
+   ```
+
+## Troubleshooting
+
+1. **No Steps Displaying**:
+   - Check WebSocket connection
+   - Verify OpenAI API key
+   - Check browser console for errors
+
+2. **LaTeX Not Rendering**:
+   - Verify MathJax is loaded
+   - Check LaTeX syntax
+   - Look for console errors
+
+3. **Slow Response**:
+   - Check network connection
+   - Verify server is running
+   - Monitor API rate limits
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Submit a pull request
+3. Make your changes
+4. Submit a pull request
 
-## Troubleshooting
-
-Common issues:
-
-1. LaTeX Rendering Issues:
-   - Check MathJax configuration
-   - Verify LaTeX syntax
-   - Look for sanitization issues
-
-2. Agent Communication:
-   - Verify CrewAI configuration
-   - Check task context variables
-   - Monitor agent outputs
-
-3. WebSocket Connections:
-   - Check client connection
-   - Verify event handling
-   - Monitor socket status
-
-## API Reference
-
-### WebSocket Events
-
-```javascript
-// Send query
-socket.emit('request_math', {
-  prompt: "Solve quadratic equation..."
-});
-
-// Receive response
-socket.on('math_response', function(data) {
-  // data.steps = array of teaching steps
-});
-```
-
-### CrewAI Response Format
-
-```python
-{
-  "steps": [
-    {
-      "natural": str,  # Teacher's speech
-      "math": str      # LaTeX notation
-    },
-    ...
-  ]
-}
-```
-
-## Roadmap
-
-- [ ] Add support for multiple teaching styles
-- [ ] Implement step-by-step playback
-- [ ] Add audio narration support
-- [ ] Expand mathematical topic coverage
+Please ensure:
+- Code follows existing style
+- Documentation is updated
+- Tests pass (if applicable)
 
 ## License
 
