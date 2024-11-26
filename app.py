@@ -7,9 +7,15 @@ from functools import partial
 import warnings
 import logging
 import re
+import time
+from datetime import datetime
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 logger = logging.getLogger(__name__)
 
 # Filter out the TracerProvider warning
@@ -26,21 +32,18 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 # Initialize the math teaching crew
 math_crew = MathTutorCrew()
 
+# Track active requests
+active_requests = {}
+
 def format_latex(latex):
     r"""
     Format LaTeX content for proper display in MathJax.
-    
-    This function serves several critical purposes:
-    1. Standardizes math display mode delimiters to \[...\]
-    2. Prevents nested delimiters that would break rendering
-    3. Always uses align* environment for consistent formatting
-    4. Ensures proper spacing in text mode
     """
     if not latex:
         return latex
     
-    logger.info("=== LaTeX Formatting Debug ===")
-    logger.info(f"Original LaTeX:\n{latex}")
+    logger.debug("=== LaTeX Formatting Debug ===")
+    logger.debug(f"Original LaTeX:\n{latex}")
     
     # Remove any existing math delimiters using precise regex
     latex = latex.strip()
@@ -55,7 +58,6 @@ def format_latex(latex):
     latex = re.sub(r'\\[a-zA-Z]+(?:\{[^}]*\})*', preserve_command, latex)
     
     # Normalize backslashes for line breaks
-    # Replace any sequence of 2 or more backslashes with a space-separated pair
     latex = re.sub(r'\\{2,}', r'\\\\ ', latex)
     
     # Restore preserved LaTeX commands
@@ -67,25 +69,22 @@ def format_latex(latex):
     latex = re.sub(r'}text{', '} \\text{', latex)
     
     # Remove any existing math delimiters
-    latex = re.sub(r'(^|[^\\])\$\$', '', latex)  # Remove $$ but not \$$
-    latex = re.sub(r'^\\\[|\\\]$', '', latex)    # Remove only start/end \[ \]
+    latex = re.sub(r'(^|[^\\])\$\$', '', latex)
+    latex = re.sub(r'^\\\[|\\\]$', '', latex)
     latex = latex.strip()
-    logger.info(f"After delimiter removal:\n{latex}")
+    logger.debug(f"After delimiter removal:\n{latex}")
     
     # Split into lines and wrap in align* environment
     lines = [line.strip() for line in latex.split('\\\\')]
-    # Clean up each line and add alignment points
     processed_lines = []
     for i, line in enumerate(lines):
-        if line:  # Only process non-empty lines
+        if line:
             if i > 0 and not line.startswith('&'):
                 line = '& ' + line
             processed_lines.append(line)
     
-    # Join with proper line breaks and wrap in align*
     latex = '\\begin{align*} ' + ' \\\\ '.join(processed_lines) + ' \\end{align*}'
-    
-    logger.info(f"After alignment processing:\n{latex}")
+    logger.debug(f"After alignment processing:\n{latex}")
     
     # Ensure color commands are properly formatted
     latex = re.sub(r'\\color{([^}]+)}([^{])', r'\\color{\1}{\2}', latex)
@@ -94,10 +93,8 @@ def format_latex(latex):
     latex = re.sub(r'([^{\\])\\text{', r'\1 \\text{', latex)
     latex = re.sub(r'}\\text{', '} \\text{', latex)
     
-    # Wrap in display math delimiters
     final_latex = f'\\[{latex}\\]'
-    logger.info(f"Final formatted LaTeX:\n{final_latex}")
-    logger.info("=== End LaTeX Formatting ===")
+    logger.debug(f"Final formatted LaTeX:\n{final_latex}")
     
     return final_latex
 
@@ -116,43 +113,80 @@ async def handle_math_request(data):
     """Handle incoming math requests using the math teaching crew."""
     try:
         prompt = data.get('prompt', '')
-        logger.info(f"Processing math request: {prompt}")
+        request_id = data.get('requestId', str(time.time()))
+        
+        logger.info(f"[Request {request_id}] New math request received: {prompt}")
+        logger.info(f"[Request {request_id}] Active requests before: {list(active_requests.keys())}")
+        
+        # Cancel any existing request from this client
+        for old_request_id in list(active_requests.keys()):
+            logger.info(f"[Request {request_id}] Cancelling old request: {old_request_id}")
+            del active_requests[old_request_id]
+        
+        # Track request start time
+        active_requests[request_id] = {
+            'start_time': datetime.now(),
+            'prompt': prompt,
+            'step_count': 0
+        }
         
         # Get the crew result with Pydantic model
+        logger.info(f"[Request {request_id}] Starting crew execution")
         result = await math_crew.crew().kickoff_async(inputs={'user_query': prompt})
         
         # Get the explanation from the Pydantic model
         explanation = result.pydantic
+        total_steps = len(explanation.steps)
+        logger.info(f"[Request {request_id}] Received explanation with {total_steps} steps")
         
         # Send each step one at a time with formatted LaTeX
-        for step in explanation.steps:
-            logger.info(f"Processing step with math content:\n{step.math}")
+        for i, step in enumerate(explanation.steps, 1):
+            if request_id not in active_requests:
+                logger.info(f"[Request {request_id}] Request cancelled, stopping step emission")
+                break
+                
+            logger.info(f"[Request {request_id}] Processing step {i}/{total_steps}")
+            logger.debug(f"[Request {request_id}] Step {i} math content:\n{step.math}")
+            
             formatted_math = format_latex(step.math)
-            logger.info(f"Emitting step with formatted math:\n{formatted_math}")
+            logger.debug(f"[Request {request_id}] Formatted math:\n{formatted_math}")
+            
+            active_requests[request_id]['step_count'] = i
             
             emit('display_step', {
                 'natural': step.natural,
-                'math': formatted_math
+                'math': formatted_math,
+                'requestId': request_id,
+                'stepNumber': i,
+                'totalSteps': total_steps
             })
+            
             # Small delay between steps for readability
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)  # Reduced delay to 0.5s for better responsiveness
+            
+        # Log completion
+        if request_id in active_requests:
+            duration = datetime.now() - active_requests[request_id]['start_time']
+            logger.info(f"[Request {request_id}] Completed in {duration.total_seconds():.2f}s")
+            logger.info(f"[Request {request_id}] Emitted {active_requests[request_id]['step_count']} steps")
+            del active_requests[request_id]
             
     except Exception as e:
-        logger.error(f"Error processing request: {e}", exc_info=True)
+        logger.error(f"[Request {request_id}] Error processing request:", exc_info=True)
         emit('display_step', {
             'natural': 'Error processing math request',
-            'math': r'\[\begin{align*} \text{Error processing math request} \end{align*}\]'
+            'math': r'\[\begin{align*} \text{Error processing math request} \end{align*}\]',
+            'requestId': request_id,
+            'error': True
         })
+        if request_id in active_requests:
+            del active_requests[request_id]
 
-@socketio.on('math_step')
-def handle_math_step(data):
-    """Broadcast a math step to all connected clients"""
-    # Format any LaTeX content before broadcasting
-    if 'math' in data:
-        logger.info(f"Processing math step with content:\n{data['math']}")
-        data['math'] = format_latex(data['math'])
-        logger.info(f"Broadcasting formatted math:\n{data['math']}")
-    socketio.emit('display_step', data)
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Clean up when a client disconnects"""
+    logger.info("Client disconnected, cleaning up active requests")
+    active_requests.clear()
 
 if __name__ == '__main__':
     logger.info("Starting Math Learning Application")
