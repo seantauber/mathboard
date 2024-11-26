@@ -2,8 +2,12 @@ class MathboardSocket {
     constructor(elements) {
         this.socket = io();
         this.stepQueue = [];
+        this.stepHistory = [];
+        this.currentStepIndex = -1;
         this.currentRequestId = null;
         this.elements = elements;
+        this.currentAudioData = null;
+        this.isPlayingAudio = false;
         this.setupSocketListeners();
         console.log('[Socket] Initialized MathboardSocket');
     }
@@ -47,24 +51,28 @@ class MathboardSocket {
             newStep: data
         });
         
+        // Add to queue
         this.stepQueue.push(data);
         
-        // If this is the first step, display it immediately
-        if (this.stepQueue.length === 1) {
-            console.log('[Queue] First step - displaying immediately');
+        // If this is the first step, add it to history and display it
+        if (this.stepQueue.length === 1 && this.stepHistory.length === 0) {
+            const firstStep = this.stepQueue.shift();
+            this.stepHistory.push(firstStep);
+            this.currentStepIndex = 0;
             this.displayCurrentStep();
         }
         
-        // Enable the next step button if there are more steps
-        this.updateNextStepButton();
+        // Update navigation buttons
+        this.updateNavigationButtons();
         
         console.log('[Queue] Queue state after add:', {
             queueLength: this.stepQueue.length,
-            currentStep: this.stepQueue[0]
+            historyLength: this.stepHistory.length,
+            currentIndex: this.currentStepIndex
         });
     }
 
-    playAudio(base64Audio) {
+    async playAudio(base64Audio) {
         return new Promise((resolve, reject) => {
             if (!base64Audio) {
                 console.log('No audio data provided');
@@ -74,6 +82,8 @@ class MathboardSocket {
 
             try {
                 console.log('Starting audio playback, base64 length:', base64Audio.length);
+                this.isPlayingAudio = true;
+                this.updateNavigationButtons();
                 
                 // Validate base64 string
                 try {
@@ -81,6 +91,8 @@ class MathboardSocket {
                     console.log('Validated base64 encoding');
                 } catch (e) {
                     console.error('Invalid base64 encoding:', e);
+                    this.isPlayingAudio = false;
+                    this.updateNavigationButtons();
                     resolve();
                     return;
                 }
@@ -104,39 +116,48 @@ class MathboardSocket {
                 
                 audio.onended = () => {
                     console.log('Audio playback completed');
-                    URL.revokeObjectURL(audio.src); // Clean up the blob URL
+                    URL.revokeObjectURL(audio.src);
+                    this.isPlayingAudio = false;
+                    this.updateNavigationButtons();
                     resolve();
                 };
 
                 audio.onerror = (error) => {
                     console.error('Audio playback error:', error);
                     URL.revokeObjectURL(audio.src);
+                    this.isPlayingAudio = false;
+                    this.updateNavigationButtons();
                     resolve();
                 };
 
                 console.log('Starting audio playback');
                 audio.play().catch(error => {
                     console.error('Error playing audio:', error);
+                    this.isPlayingAudio = false;
+                    this.updateNavigationButtons();
                     resolve();
                 });
             } catch (error) {
                 console.error('Error in audio playback:', error);
+                this.isPlayingAudio = false;
+                this.updateNavigationButtons();
                 resolve();
             }
         });
     }
 
     async displayCurrentStep() {
-        if (this.stepQueue.length === 0) {
+        if (this.stepHistory.length === 0 || this.currentStepIndex < 0) {
             console.log('[Display] No steps to display');
             return;
         }
 
-        const data = this.stepQueue[0];
+        const data = this.stepHistory[this.currentStepIndex];
         console.log('[Display] Displaying step:', data);
 
-        const { mathWhiteboard, explanationDisplay } = this.elements;
+        const { mathWhiteboard } = this.elements;
         const loadingSpinner = document.querySelector('.loading-spinner');
+        const replayButton = document.getElementById('replayAudioButton');
         
         // Hide loading spinner
         if (loadingSpinner) {
@@ -166,11 +187,12 @@ class MathboardSocket {
                 this.showError('Error displaying mathematical content');
             }
         }
-        
-        // Display explanation
-        if (data.natural && explanationDisplay) {
-            console.log('[Display] Updating explanation');
-            explanationDisplay.textContent = data.natural;
+
+        // Store current audio data and update replay button
+        this.currentAudioData = data.audio;
+        if (replayButton) {
+            replayButton.disabled = !data.hasAudio || this.isPlayingAudio;
+            replayButton.onclick = () => this.replayCurrentAudio();
         }
 
         // Play audio if available
@@ -186,35 +208,108 @@ class MathboardSocket {
         }
     }
 
-    nextStep() {
-        console.log('[Navigation] Next step requested', {
-            queueLengthBefore: this.stepQueue.length,
-            currentStep: this.stepQueue[0]
-        });
-        
-        // Remove the current step and show the next one
-        if (this.stepQueue.length > 0) {
-            this.stepQueue.shift();
-            console.log('[Navigation] Moved to next step', {
-                queueLengthAfter: this.stepQueue.length,
-                newCurrentStep: this.stepQueue[0]
-            });
-            this.displayCurrentStep();
-            this.updateNextStepButton();
+    async replayCurrentAudio() {
+        if (this.currentAudioData && !this.isPlayingAudio) {
+            console.log('[Audio] Replaying current step audio');
+            const replayButton = document.getElementById('replayAudioButton');
+            if (replayButton) {
+                replayButton.disabled = true;
+            }
+            
+            try {
+                await this.playAudio(this.currentAudioData);
+            } catch (error) {
+                console.error('Error replaying audio:', error);
+            }
+            
+            if (replayButton) {
+                replayButton.disabled = false;
+            }
+        } else {
+            console.log('[Audio] No audio data available to replay or audio is currently playing');
         }
     }
 
-    updateNextStepButton() {
-        const { nextStepButton } = this.elements;
-        if (nextStepButton) {
-            // Enable button if there are more steps in the queue
-            const shouldEnable = this.stepQueue.length > 1;
-            nextStepButton.disabled = !shouldEnable;
-            console.log('[UI] Next step button updated:', {
-                enabled: shouldEnable,
-                queueLength: this.stepQueue.length
-            });
+    async nextStep() {
+        console.log('[Navigation] Next step requested');
+        
+        // Don't proceed if audio is still playing
+        if (this.isPlayingAudio) {
+            console.log('[Navigation] Waiting for audio to complete');
+            return;
         }
+        
+        if (this.stepQueue.length > 0) {
+            // Move next step to history
+            const step = this.stepQueue.shift();
+            this.stepHistory.push(step);
+            this.currentStepIndex = this.stepHistory.length - 1;
+            
+            console.log('[Navigation] Moved to next step', {
+                historyLength: this.stepHistory.length,
+                currentIndex: this.currentStepIndex
+            });
+            
+            await this.displayCurrentStep();
+            this.updateNavigationButtons();
+        }
+    }
+
+    async prevStep() {
+        console.log('[Navigation] Previous step requested');
+        
+        // Don't proceed if audio is still playing
+        if (this.isPlayingAudio) {
+            console.log('[Navigation] Waiting for audio to complete');
+            return;
+        }
+        
+        if (this.currentStepIndex > 0) {
+            this.currentStepIndex--;
+            console.log('[Navigation] Moved to previous step', {
+                historyLength: this.stepHistory.length,
+                currentIndex: this.currentStepIndex
+            });
+            
+            await this.displayCurrentStep();
+            this.updateNavigationButtons();
+        }
+    }
+
+    updateNavigationButtons() {
+        const prevButton = document.getElementById('prevStepButton');
+        const nextButton = document.getElementById('nextStepButton');
+        const replayButton = document.getElementById('replayAudioButton');
+        
+        if (prevButton) {
+            const canGoBack = this.currentStepIndex > 0 && !this.isPlayingAudio;
+            prevButton.disabled = !canGoBack;
+            if (canGoBack) {
+                prevButton.onclick = () => this.prevStep();
+            }
+        }
+        
+        if (nextButton) {
+            const canGoForward = this.stepQueue.length > 0 && !this.isPlayingAudio;
+            nextButton.disabled = !canGoForward;
+            if (canGoForward) {
+                nextButton.onclick = () => this.nextStep();
+            }
+        }
+        
+        if (replayButton) {
+            replayButton.disabled = !this.currentAudioData || this.isPlayingAudio;
+        }
+        
+        console.log('[UI] Navigation buttons updated:', {
+            prevEnabled: !prevButton?.disabled,
+            nextEnabled: !nextButton?.disabled,
+            replayEnabled: !replayButton?.disabled,
+            historyLength: this.stepHistory.length,
+            queueLength: this.stepQueue.length,
+            currentIndex: this.currentStepIndex,
+            isPlayingAudio: this.isPlayingAudio
+        });
     }
 
     showError(message) {
@@ -234,8 +329,9 @@ class MathboardSocket {
 
         console.log('[Query] Sending new math query:', query);
 
-        const { mathWhiteboard, explanationDisplay, nextStepButton } = this.elements;
+        const { mathWhiteboard } = this.elements;
         const loadingSpinner = document.querySelector('.loading-spinner');
+        const replayButton = document.getElementById('replayAudioButton');
 
         // Generate new request ID
         this.currentRequestId = Date.now().toString();
@@ -245,23 +341,21 @@ class MathboardSocket {
         if (mathWhiteboard) {
             mathWhiteboard.innerHTML = '';
         }
-        if (explanationDisplay) {
-            explanationDisplay.innerHTML = `
-                <div class="waiting-message">
-                    <p>Processing your question...</p>
-                </div>
-            `;
-        }
         if (loadingSpinner) {
             loadingSpinner.style.display = 'block';
         }
-        if (nextStepButton) {
-            nextStepButton.disabled = true;
-        }
 
-        // Clear the step queue
-        console.log('[Query] Clearing step queue');
+        // Reset state
         this.stepQueue = [];
+        this.stepHistory = [];
+        this.currentStepIndex = -1;
+        this.currentAudioData = null;
+        this.isPlayingAudio = false;
+        this.updateNavigationButtons();
+        
+        if (replayButton) {
+            replayButton.disabled = true;
+        }
 
         // Emit the question to the server
         console.log('[Query] Emitting request_math event', {
