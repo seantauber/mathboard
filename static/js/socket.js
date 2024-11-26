@@ -1,41 +1,75 @@
 class MathboardSocket {
-    constructor() {
+    constructor(elements) {
         this.socket = io();
         this.stepQueue = [];
+        this.currentRequestId = null;
+        this.elements = elements;
         this.setupSocketListeners();
+        console.log('[Socket] Initialized MathboardSocket');
     }
 
     setupSocketListeners() {
         // Handle connection errors
         this.socket.on('connect_error', (error) => {
             this.showError('Connection error. Please try again later.');
-            console.log('Connection error:', error);
+            console.log('[Socket Error] Connection error:', error);
         });
 
         // Handle receiving steps from the server
         this.socket.on('display_step', (data) => {
-            this.addStepToQueue(data);
+            console.log(`[Socket] Received step for request ${data.requestId}:`, {
+                currentRequestId: this.currentRequestId,
+                queueLength: this.stepQueue.length,
+                stepData: data
+            });
+            
+            // Only process steps for current request
+            if (data.requestId === this.currentRequestId) {
+                this.addStepToQueue(data);
+            } else {
+                console.log(`[Socket] Ignoring step from old request ${data.requestId}`);
+            }
+        });
+
+        this.socket.on('error', (error) => {
+            console.error('[Socket] Error:', error);
+            this.showError('An error occurred. Please try again.');
         });
     }
 
     addStepToQueue(data) {
+        console.log('[Queue] Adding step to queue:', {
+            queueLengthBefore: this.stepQueue.length,
+            newStep: data
+        });
+        
         this.stepQueue.push(data);
         
         // If this is the first step, display it immediately
         if (this.stepQueue.length === 1) {
+            console.log('[Queue] First step - displaying immediately');
             this.displayCurrentStep();
         }
         
         // Enable the next step button if there are more steps
         this.updateNextStepButton();
+        
+        console.log('[Queue] Queue state after add:', {
+            queueLength: this.stepQueue.length,
+            currentStep: this.stepQueue[0]
+        });
     }
 
     async displayCurrentStep() {
-        if (this.stepQueue.length === 0) return;
+        if (this.stepQueue.length === 0) {
+            console.log('[Display] No steps to display');
+            return;
+        }
 
         const data = this.stepQueue[0];
-        const mathWhiteboard = document.getElementById('mathWhiteboard');
-        const explanationDisplay = document.getElementById('explanationDisplay');
+        console.log('[Display] Displaying step:', data);
+
+        const { mathWhiteboard, explanationDisplay } = this.elements;
         const loadingSpinner = document.querySelector('.loading-spinner');
         
         // Hide loading spinner
@@ -44,46 +78,70 @@ class MathboardSocket {
         }
         
         // Display math in whiteboard
-        if (data.math) {
-            mathWhiteboard.innerHTML = data.math;
+        if (data.math && mathWhiteboard) {
+            console.log('[Display] Updating math content');
+            try {
+                mathWhiteboard.innerHTML = '';
+                const mathElement = document.createElement('div');
+                mathElement.textContent = data.math;
+                mathWhiteboard.appendChild(mathElement);
+                
+                // Trigger MathJax processing
+                if (window.MathJax) {
+                    console.log('[MathJax] Starting typeset');
+                    await window.MathJax.typesetPromise([mathWhiteboard]);
+                    console.log('[MathJax] Completed typeset');
+                } else {
+                    console.error('[MathJax] Not loaded');
+                    this.showError('Error displaying mathematical content');
+                }
+            } catch (error) {
+                console.error('[Display] Error displaying math:', error);
+                this.showError('Error displaying mathematical content');
+            }
         }
         
         // Display explanation
-        if (data.natural) {
-            explanationDisplay.innerHTML = `<p>${data.natural}</p>`;
-        }
-        
-        // Wait for MathJax to be ready
-        try {
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                await window.MathJax.typesetPromise([mathWhiteboard]);
-            } else {
-                console.log('MathJax not ready, falling back to basic rendering');
-            }
-        } catch (err) {
-            console.log('Error rendering math:', err);
+        if (data.natural && explanationDisplay) {
+            console.log('[Display] Updating explanation');
+            explanationDisplay.textContent = data.natural;
         }
     }
 
     nextStep() {
+        console.log('[Navigation] Next step requested', {
+            queueLengthBefore: this.stepQueue.length,
+            currentStep: this.stepQueue[0]
+        });
+        
         // Remove the current step and show the next one
         if (this.stepQueue.length > 0) {
             this.stepQueue.shift();
+            console.log('[Navigation] Moved to next step', {
+                queueLengthAfter: this.stepQueue.length,
+                newCurrentStep: this.stepQueue[0]
+            });
             this.displayCurrentStep();
             this.updateNextStepButton();
         }
     }
 
     updateNextStepButton() {
-        const nextStepButton = document.getElementById('nextStepButton');
+        const { nextStepButton } = this.elements;
         if (nextStepButton) {
             // Enable button if there are more steps in the queue
-            nextStepButton.disabled = this.stepQueue.length <= 1;
+            const shouldEnable = this.stepQueue.length > 1;
+            nextStepButton.disabled = !shouldEnable;
+            console.log('[UI] Next step button updated:', {
+                enabled: shouldEnable,
+                queueLength: this.stepQueue.length
+            });
         }
     }
 
     showError(message) {
-        const errorDisplay = document.getElementById('errorDisplay');
+        console.error('[Error] Displaying error:', message);
+        const { errorDisplay } = this.elements;
         if (errorDisplay) {
             errorDisplay.textContent = message;
             errorDisplay.style.display = 'block';
@@ -96,10 +154,14 @@ class MathboardSocket {
             return;
         }
 
-        const mathWhiteboard = document.getElementById('mathWhiteboard');
-        const explanationDisplay = document.getElementById('explanationDisplay');
+        console.log('[Query] Sending new math query:', query);
+
+        const { mathWhiteboard, explanationDisplay, nextStepButton } = this.elements;
         const loadingSpinner = document.querySelector('.loading-spinner');
-        const nextStepButton = document.getElementById('nextStepButton');
+
+        // Generate new request ID
+        this.currentRequestId = Date.now().toString();
+        console.log('[Query] Generated new request ID:', this.currentRequestId);
 
         // Clear previous content and show loading
         if (mathWhiteboard) {
@@ -120,71 +182,29 @@ class MathboardSocket {
         }
 
         // Clear the step queue
+        console.log('[Query] Clearing step queue');
         this.stepQueue = [];
 
         // Emit the question to the server
-        this.socket.emit('request_math', { prompt: query });
+        console.log('[Query] Emitting request_math event', {
+            requestId: this.currentRequestId,
+            prompt: query
+        });
+        this.socket.emit('request_math', { 
+            prompt: query,
+            requestId: this.currentRequestId
+        });
     }
 }
 
-// Initialize event listeners for standalone usage
-document.addEventListener('DOMContentLoaded', function() {
-    const mathInput = document.getElementById('mathInput');
-    const askButton = document.getElementById('askButton');
-    const nextStepButton = document.getElementById('nextStepButton');
-    const quickQuestions = document.querySelectorAll('.quick-question');
-    
-    if (!window.whiteboard) {  // Only initialize if not using whiteboard.js
-        const socket = new MathboardSocket();
+// Only create a single instance that can be shared
+let instance = null;
 
-        // Handle ask button click
-        if (askButton) {
-            askButton.addEventListener('click', () => {
-                socket.sendMathQuery(mathInput.value);
-            });
+export default class {
+    constructor(elements) {
+        if (!instance) {
+            instance = new MathboardSocket(elements);
         }
-
-        // Handle next step button click
-        if (nextStepButton) {
-            nextStepButton.addEventListener('click', () => {
-                socket.nextStep();
-            });
-        }
-
-        // Handle enter key in input
-        if (mathInput) {
-            mathInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    socket.sendMathQuery(mathInput.value);
-                }
-            });
-        }
-
-        // Handle quick question buttons
-        quickQuestions.forEach(button => {
-            button.addEventListener('click', () => {
-                const question = button.dataset.question;
-                if (mathInput) {
-                    mathInput.value = question;
-                }
-                socket.sendMathQuery(question);
-            });
-        });
-
-        // Handle math symbol clicks
-        document.querySelectorAll('.math-symbol').forEach(symbol => {
-            symbol.addEventListener('click', () => {
-                if (mathInput) {
-                    const symbolText = symbol.dataset.symbol;
-                    const cursorPos = mathInput.selectionStart;
-                    const inputValue = mathInput.value;
-                    mathInput.value = inputValue.slice(0, cursorPos) + symbolText + inputValue.slice(cursorPos);
-                    mathInput.focus();
-                    mathInput.setSelectionRange(cursorPos + symbolText.length, cursorPos + symbolText.length);
-                }
-            });
-        });
+        return instance;
     }
-});
-
-export default MathboardSocket;
+}
