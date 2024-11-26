@@ -9,6 +9,8 @@ import logging
 import re
 import time
 from datetime import datetime
+import os
+from src.services.tts_service import generate_speech
 
 # Configure logging
 logging.basicConfig(
@@ -25,9 +27,18 @@ warnings.filterwarnings('ignore', category=RuntimeWarning,
 # Load environment variables
 load_dotenv()
 
+# Validate environment
+if not os.getenv('OPENAI_API_KEY'):
+    raise ValueError("OPENAI_API_KEY environment variable is not set")
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max-limit
+socketio = SocketIO(app, 
+                   cors_allowed_origins="*", 
+                   async_mode='threading',
+                   max_http_buffer_size=1e8,
+                   binary=True)
 
 # Initialize the math teaching crew
 math_crew = MathTutorCrew()
@@ -139,8 +150,16 @@ async def handle_math_request(data):
         total_steps = len(explanation.steps)
         logger.info(f"[Request {request_id}] Received explanation with {total_steps} steps")
         
-        # Send each step one at a time with formatted LaTeX
-        for i, step in enumerate(explanation.steps, 1):
+        # Process all steps in parallel for TTS
+        tts_tasks = []
+        for step in explanation.steps:
+            if step.natural:
+                tts_tasks.append(generate_speech(step.natural))
+            
+        audio_results = await asyncio.gather(*tts_tasks)
+        
+        # Send each step with its audio
+        for i, (step, audio_data) in enumerate(zip(explanation.steps, audio_results), 1):
             if request_id not in active_requests:
                 logger.info(f"[Request {request_id}] Request cancelled, stopping step emission")
                 break
@@ -158,7 +177,10 @@ async def handle_math_request(data):
                 'math': formatted_math,
                 'requestId': request_id,
                 'stepNumber': i,
-                'totalSteps': total_steps
+                'totalSteps': total_steps,
+                'audio': audio_data,
+                'hasAudio': audio_data is not None,
+                'audioLength': len(audio_data) if audio_data else 0
             })
             
             # Small delay between steps for readability
@@ -174,10 +196,12 @@ async def handle_math_request(data):
     except Exception as e:
         logger.error(f"[Request {request_id}] Error processing request:", exc_info=True)
         emit('display_step', {
-            'natural': 'Error processing math request',
+            'natural': f'Error processing math request: {str(e)}',
             'math': r'\[\begin{align*} \text{Error processing math request} \end{align*}\]',
             'requestId': request_id,
-            'error': True
+            'error': True,
+            'hasAudio': False,
+            'audioLength': 0
         })
         if request_id in active_requests:
             del active_requests[request_id]
