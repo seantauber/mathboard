@@ -16,7 +16,17 @@ generate_explanation:
 
     Output Requirements:
 
-    1. Natural Language (TTS) Requirements:
+    1. Mathematical Correctness:
+       - Verify all mathematical expressions and calculations are correct
+       - Check that equations maintain equality through transformations
+       - Confirm all algebraic manipulations follow valid rules
+       - Ensure numerical calculations are accurate
+       - Validate mathematical properties and theorems are applied correctly
+       - Double-check signs in operations (especially with negatives)
+       - Verify proper order of operations is maintained
+       - Confirm all mathematical definitions are used accurately
+
+    2. Natural Language (TTS) Requirements:
        - Use complete, well-formed sentences
        - Include appropriate pauses using punctuation (periods, commas)
        - Avoid abbreviations, symbols, or mathematical notation in the natural text
@@ -27,7 +37,7 @@ generate_explanation:
        - When referring to equations, describe them verbally
        - Use prosody-friendly language that flows naturally when spoken
 
-    2. Mathematical Display Techniques:
+    3. Mathematical Display Techniques:
        - Progressive Building:
          * Use \\\\ for single line breaks
          * For consecutive line breaks, separate with space: \\\\ \\\\
@@ -49,7 +59,7 @@ generate_explanation:
          * Clear visual hierarchy in multi-line displays
          * Use proper spacing between elements
 
-    3. Step Structure:
+    4. Step Structure:
        - First step:
          * Clear introduction of the concept
          * Include "step by step" in the introduction
@@ -62,8 +72,9 @@ generate_explanation:
          * Connect verbal explanation to highlighted elements
          * Break down complex operations into smaller parts
          * Use multiple lines to show work progression
+         * Verify mathematical correctness at each step
 
-    4. Format Requirements:
+    5. Format Requirements:
        natural: 
          - ONLY natural language optimized for TTS
          - NO mathematical symbols or notation
@@ -75,14 +86,16 @@ generate_explanation:
          - Use \text{{...}} for text mode with proper spacing
          - Use \\\\ for line breaks (with space between consecutive breaks)
          - Include all previous relevant work
+         - Ensure all mathematical expressions are correct
 
-    5. Teaching Flow:
+    6. Teaching Flow:
        - Each step should feel like a natural teaching moment
        - Visual emphasis should match verbal explanation
        - Clear progression in both speech and visuals
        - Appropriate pacing with verbal cues for transitions
        - Break down complex concepts into digestible pieces
        - Use color and emphasis to guide understanding
+       - Verify mathematical accuracy throughout explanation
 
     Example LaTeX Formatting:
     \text{{The least common denominator is: }} \color{{blue}}{{6}} \\\\
@@ -110,6 +123,7 @@ optimize_visual_narrative:
     2. Add visual emphasis and highlighting
     3. Create smooth visual transitions
     4. Synchronize visuals with spoken explanation
+    5. Verify mathematical correctness of all expressions
 
     Output Structure:
     * frames: list of visual teaching moments, each with:
@@ -162,14 +176,22 @@ optimize_visual_narrative:
 
     Requirements:
 
-    1. Visual Progression:
+    1. Mathematical Verification:
+      - Review all expressions for mathematical accuracy
+      - Verify correctness of all calculations and transformations
+      - Ensure mathematical properties are applied properly
+      - Confirm logical progression of mathematical steps
+      - Check consistency of mathematical notation
+      - Validate all algebraic manipulations
+
+    2. Visual Progression:
       - Break down complex steps into clear visual frames
       - Build concepts piece by piece
       - Maintain context while adding new elements
       - Show clear visual evolution
       - Use appropriate pacing
 
-    2. Enhancement Techniques:
+    3. Enhancement Techniques:
       - Colors (\color{{name}}{{content}})
       - Boxes (\boxed{{content}}, \fbox{{content}})
       - Braces (\underbrace{{content}}_{{{{\text{{label}}}})
@@ -179,15 +201,16 @@ optimize_visual_narrative:
       - Checkmarks (\checkmark) for completed steps
       - Line breaks (\\\\ with space between consecutive breaks)
 
-    3. Frame Guidelines:
+    4. Frame Guidelines:
       - Each frame must contain complete board state
       - Clear visual hierarchy
       - Consistent use of visual elements
       - Smooth transitions between frames
       - Visual elements should support spoken text
       - Proper spacing between elements
+      - Verify mathematical correctness in each frame
 
-    4. Visual Design Principles:
+    5. Visual Design Principles:
       - Focus attention on current concept
       - Build complexity gradually
       - Keep related elements visually connected
