@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Math Learning</title>
+    <title>MathBoard</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mathboard.css') }}">
     
     <!-- Load MathJax -->
     <script src="{{ url_for('static', filename='js/mathjax-config.js') }}"></script>
@@ -24,55 +23,32 @@
 <body>
     <div class="app-container">
         <header class="app-header">
-            <h1>Interactive Math Learning</h1>
-            <p class="header-subtitle">Learn mathematics step by step with audio explanations</p>
+            <h1>MathBoard 🎓</h1>
         </header>
 
         <main class="app-content">
-            <div class="learning-container">
-                <!-- Question Input Section -->
-                <section class="question-section">
-                    <div class="input-wrapper">
-                        <input type="text" id="mathInput" class="math-input" 
-                               placeholder="Ask a math question (e.g., 'How do you add fractions?')">
-                        <button id="askButton" class="ask-button">Ask</button>
-                    </div>
-                    
-                    <!-- Quick Questions -->
-                    <div class="quick-questions">
-                        <h3>Try these questions:</h3>
-                        <div class="quick-questions-grid">
-                            <button class="quick-question" data-question="How do you add fractions?">Adding Fractions</button>
-                            <button class="quick-question" data-question="How do you solve quadratic equations?">Quadratic Equations</button>
-                            <button class="quick-question" data-question="What is the Pythagorean theorem?">Pythagorean Theorem</button>
-                        </div>
-                    </div>
-                </section>
+            <div class="search-container">
+                <input type="text" id="mathInput" class="math-input" 
+                       placeholder="Enter math topic (e.g., Quadratic equations)">
+                <button id="askButton" class="go-button">Go 🚀</button>
+            </div>
 
-                <!-- Math Display Section -->
-                <section class="display-section">
-                    <div class="whiteboard-container">
-                        <div id="mathWhiteboard" class="math-whiteboard"></div>
-                        <!-- Loading Indicator -->
-                        <div class="loading-spinner"></div>
-                        <button id="replayAudioButton" class="replay-audio-button" disabled>
-                            <span class="replay-icon">🔊</span> Replay Audio
-                        </button>
-                    </div>
+            <div class="whiteboard-container">
+                <div id="mathWhiteboard" class="math-whiteboard">
+                    <div class="placeholder-text">Math magic happens here ✨</div>
+                </div>
+                <div class="loading-spinner"></div>
+                <button id="replayAudioButton" class="replay-button" disabled>
+                    <span class="replay-icon">🔊</span> Replay
+                </button>
+            </div>
 
-                    <!-- Step Control -->
-                    <div class="step-control">
-                        <button id="prevStepButton" class="nav-button prev-step-button" disabled>
-                            <span class="nav-icon">←</span> Previous
-                        </button>
-                        <button id="nextStepButton" class="nav-button next-step-button" disabled>
-                            Next <span class="nav-icon">→</span>
-                        </button>
-                    </div>
-                    
-                    <!-- Error Display -->
-                    <div id="errorDisplay" class="error-message"></div>
-                </section>
+            <div id="errorDisplay" class="error-message"></div>
+
+            <div class="navigation-controls">
+                <button id="prevStepButton" class="nav-button prev-button" disabled>⏮</button>
+                <button class="nav-button refresh-button">⟳</button>
+                <button id="nextStepButton" class="nav-button next-button" disabled>⏭</button>
             </div>
         </main>
     </div>
