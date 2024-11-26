@@ -20,7 +20,11 @@ class MathboardSocket {
             console.log(`[Socket] Received step for request ${data.requestId}:`, {
                 currentRequestId: this.currentRequestId,
                 queueLength: this.stepQueue.length,
-                stepData: data
+                stepData: data,
+                hasAudio: data.hasAudio,
+                audioLength: data.audioLength,
+                audioDataPresent: !!data.audio,
+                audioDataLength: data.audio ? data.audio.length : 0
             });
             
             // Only process steps for current request
@@ -57,6 +61,68 @@ class MathboardSocket {
         console.log('[Queue] Queue state after add:', {
             queueLength: this.stepQueue.length,
             currentStep: this.stepQueue[0]
+        });
+    }
+
+    playAudio(base64Audio) {
+        return new Promise((resolve, reject) => {
+            if (!base64Audio) {
+                console.log('No audio data provided');
+                resolve();
+                return;
+            }
+
+            try {
+                console.log('Starting audio playback, base64 length:', base64Audio.length);
+                
+                // Validate base64 string
+                try {
+                    atob(base64Audio.slice(0, 100));
+                    console.log('Validated base64 encoding');
+                } catch (e) {
+                    console.error('Invalid base64 encoding:', e);
+                    resolve();
+                    return;
+                }
+                
+                // Convert base64 to blob
+                const byteCharacters = atob(base64Audio);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'audio/mp3' });
+                console.log('Created audio blob of size:', blob.size);
+                
+                // Create audio element
+                const audio = new Audio(URL.createObjectURL(blob));
+                
+                audio.oncanplay = () => {
+                    console.log('Audio ready to play, duration:', audio.duration);
+                };
+                
+                audio.onended = () => {
+                    console.log('Audio playback completed');
+                    URL.revokeObjectURL(audio.src); // Clean up the blob URL
+                    resolve();
+                };
+
+                audio.onerror = (error) => {
+                    console.error('Audio playback error:', error);
+                    URL.revokeObjectURL(audio.src);
+                    resolve();
+                };
+
+                console.log('Starting audio playback');
+                audio.play().catch(error => {
+                    console.error('Error playing audio:', error);
+                    resolve();
+                });
+            } catch (error) {
+                console.error('Error in audio playback:', error);
+                resolve();
+            }
         });
     }
 
@@ -105,6 +171,18 @@ class MathboardSocket {
         if (data.natural && explanationDisplay) {
             console.log('[Display] Updating explanation');
             explanationDisplay.textContent = data.natural;
+        }
+
+        // Play audio if available
+        if (data.hasAudio && data.audio) {
+            console.log('Attempting to play audio');
+            try {
+                await this.playAudio(data.audio);
+            } catch (error) {
+                console.error('Error during audio playback:', error);
+            }
+        } else {
+            console.log('No audio data available for this step');
         }
     }
 
