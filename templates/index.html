@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Math Learning</title>
     
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
     <!-- Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mathboard.css') }}">
@@ -20,7 +25,7 @@
     <div class="app-container">
         <header class="app-header">
             <h1>Interactive Math Learning</h1>
-            <p class="header-subtitle">Learn mathematics step by step with detailed explanations</p>
+            <p class="header-subtitle">Learn mathematics step by step with audio explanations</p>
         </header>
 
         <main class="app-content">
@@ -36,50 +41,34 @@
                     <!-- Quick Questions -->
                     <div class="quick-questions">
                         <h3>Try these questions:</h3>
-                        <button class="quick-question" data-question="How do you add fractions?">Adding Fractions</button>
-                        <button class="quick-question" data-question="How do you solve quadratic equations?">Quadratic Equations</button>
-                        <button class="quick-question" data-question="What is the Pythagorean theorem?">Pythagorean Theorem</button>
+                        <div class="quick-questions-grid">
+                            <button class="quick-question" data-question="How do you add fractions?">Adding Fractions</button>
+                            <button class="quick-question" data-question="How do you solve quadratic equations?">Quadratic Equations</button>
+                            <button class="quick-question" data-question="What is the Pythagorean theorem?">Pythagorean Theorem</button>
+                        </div>
                     </div>
                 </section>
 
-                <!-- Math Tools Section -->
-                <section class="tools-section">
-                    <h2>Math Tools</h2>
-                    <div class="math-symbols">
-                        <span class="math-symbol" data-symbol="+">+</span>
-                        <span class="math-symbol" data-symbol="-">−</span>
-                        <span class="math-symbol" data-symbol="\times">×</span>
-                        <span class="math-symbol" data-symbol="\div">÷</span>
-                        <span class="math-symbol" data-symbol="\sqrt{}">√</span>
-                        <span class="math-symbol" data-symbol="\frac{}{}">⅟</span>
-                        <span class="math-symbol" data-symbol="\sum">Σ</span>
-                        <span class="math-symbol" data-symbol="\int">∫</span>
-                    </div>
-                </section>
-
-                <!-- Split Display Section -->
+                <!-- Math Display Section -->
                 <section class="display-section">
-                    <div class="display-container">
-                        <!-- Math Display -->
-                        <div class="math-display-section">
-                            <h2>Math Whiteboard</h2>
-                            <div id="mathWhiteboard" class="math-whiteboard"></div>
-                        </div>
-
-                        <!-- Explanation Display -->
-                        <div class="explanation-display-section">
-                            <h2>Explanation</h2>
-                            <div id="explanationDisplay" class="explanation-content"></div>
-                        </div>
+                    <div class="whiteboard-container">
+                        <div id="mathWhiteboard" class="math-whiteboard"></div>
+                        <!-- Loading Indicator -->
+                        <div class="loading-spinner"></div>
+                        <button id="replayAudioButton" class="replay-audio-button" disabled>
+                            <span class="replay-icon">🔊</span> Replay Audio
+                        </button>
                     </div>
 
                     <!-- Step Control -->
                     <div class="step-control">
-                        <button id="nextStepButton" class="next-step-button" disabled>Next Step</button>
+                        <button id="prevStepButton" class="nav-button prev-step-button" disabled>
+                            <span class="nav-icon">←</span> Previous
+                        </button>
+                        <button id="nextStepButton" class="nav-button next-step-button" disabled>
+                            Next <span class="nav-icon">→</span>
+                        </button>
                     </div>
-                    
-                    <!-- Loading Indicator -->
-                    <div class="loading-spinner"></div>
                     
                     <!-- Error Display -->
                     <div id="errorDisplay" class="error-message"></div>
