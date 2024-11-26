@@ -178,8 +178,8 @@ body {
 }
 
 .display-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 2rem;
     margin-bottom: 1.5rem;
 }
@@ -190,6 +190,7 @@ body {
     border-radius: 8px;
     padding: 1.5rem;
     box-shadow: 0 2px 4px var(--shadow-color);
+    width: 100%;
 }
 
 .math-display-section h2,
@@ -200,7 +201,7 @@ body {
 }
 
 .math-whiteboard {
-    min-height: 400px;
+    min-height: 500px;
     background: var(--background-color);
     border-radius: 8px;
     padding: 1.5rem;
@@ -217,7 +218,7 @@ body {
 }
 
 .explanation-content {
-    min-height: 400px;
+    height: 150px;
     background: var(--background-color);
     border-radius: 8px;
     padding: 1.5rem;
@@ -335,10 +336,5 @@ body {
     
     .math-symbols {
         justify-content: center;
-    }
-
-    .display-container {
-        grid-template-columns: 1fr;
-        gap: 1rem;
     }
 }
