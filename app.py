@@ -11,6 +11,7 @@ import time
 from datetime import datetime
 import os
 from src.services.tts_service import generate_speech
+from src.utils.math_utils import validate_mathml, format_mathml
 
 # Configure logging
 logging.basicConfig(
@@ -46,44 +47,38 @@ math_crew = MathTutorCrew()
 # Track active requests
 active_requests = {}
 
-def format_latex(latex):
-    r"""
-    Format LaTeX content for proper display in MathJax.
+def process_math_content(content):
     """
-    if not latex:
-        return latex
+    Process mathematical content, handling both MathML and LaTeX formats.
+    """
+    if not content:
+        return content
     
-    logger.debug("=== LaTeX Formatting Debug ===")
-    logger.debug(f"Original LaTeX:\n{latex}")
+    logger.debug("=== Math Content Processing Debug ===")
+    logger.debug(f"Original content:\n{content}")
     
-    # Remove any existing math delimiters using precise regex
-    latex = latex.strip()
+    # Check if content is MathML
+    if '<math' in content:
+        try:
+            # Extract MathML if it's wrapped in LaTeX
+            mathml_match = re.search(r'<math[\s\S]*?</math>', content)
+            if mathml_match:
+                mathml = mathml_match.group(0)
+                if validate_mathml(mathml):
+                    logger.debug("Valid MathML found")
+                    return format_mathml(mathml)
+        except Exception as e:
+            logger.error(f"Error processing MathML: {e}")
+            return content
     
-    # First preserve LaTeX commands by temporarily replacing them
-    commands = {}
-    def preserve_command(match):
-        cmd = match.group(0)
-        token = f"CMD{len(commands)}"
-        commands[token] = cmd
-        return token
-    latex = re.sub(r'\\[a-zA-Z]+(?:\{[^}]*\})*', preserve_command, latex)
-    
-    # Normalize backslashes for line breaks
-    latex = re.sub(r'\\{2,}', r'\\\\ ', latex)
-    
-    # Restore preserved LaTeX commands
-    for token, cmd in commands.items():
-        latex = latex.replace(token, cmd)
-    
-    # Ensure proper spacing in text mode
-    latex = re.sub(r'(^|\\\\|\s|[^\\])text{', r'\1\\text{', latex)
-    latex = re.sub(r'}text{', '} \\text{', latex)
+    # If not MathML or invalid MathML, treat as LaTeX (legacy support)
+    logger.debug("Processing as LaTeX (legacy support)")
+    latex = content.strip()
     
     # Remove any existing math delimiters
     latex = re.sub(r'(^|[^\\])\$\$', '', latex)
     latex = re.sub(r'^\\\[|\\\]$', '', latex)
     latex = latex.strip()
-    logger.debug(f"After delimiter removal:\n{latex}")
     
     # Split into lines and wrap in align* environment
     lines = [line.strip() for line in latex.split('\\\\')]
@@ -95,17 +90,13 @@ def format_latex(latex):
             processed_lines.append(line)
     
     latex = '\\begin{align*} ' + ' \\\\ '.join(processed_lines) + ' \\end{align*}'
-    logger.debug(f"After alignment processing:\n{latex}")
-    
-    # Ensure color commands are properly formatted
-    latex = re.sub(r'\\color{([^}]+)}([^{])', r'\\color{\1}{\2}', latex)
     
     # Add proper spacing around text mode content
     latex = re.sub(r'([^{\\])\\text{', r'\1 \\text{', latex)
     latex = re.sub(r'}\\text{', '} \\text{', latex)
     
     final_latex = f'\\[{latex}\\]'
-    logger.debug(f"Final formatted LaTeX:\n{final_latex}")
+    logger.debug(f"Final processed content:\n{final_latex}")
     
     return final_latex
 
@@ -167,14 +158,18 @@ async def handle_math_request(data):
             logger.info(f"[Request {request_id}] Processing step {i}/{total_steps}")
             logger.debug(f"[Request {request_id}] Step {i} math content:\n{step.math}")
             
-            formatted_math = format_latex(step.math)
-            logger.debug(f"[Request {request_id}] Formatted math:\n{formatted_math}")
+            processed_math = process_math_content(step.math)
+            logger.debug(f"[Request {request_id}] Processed math:\n{processed_math}")
             
             active_requests[request_id]['step_count'] = i
             
+            # Determine if content is MathML
+            is_mathml = '<math' in processed_math
+            
             emit('display_step', {
                 'natural': step.natural,
-                'math': formatted_math,
+                'math': processed_math if not is_mathml else None,
+                'mathml': processed_math if is_mathml else None,
                 'requestId': request_id,
                 'stepNumber': i,
                 'totalSteps': total_steps,

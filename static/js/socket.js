@@ -73,6 +73,103 @@ class MathboardSocket {
         });
     }
 
+    parseMathML(mathmlString) {
+        // Create a temporary container
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(mathmlString, 'application/xml');
+        
+        // Check for parsing errors
+        const parseError = doc.querySelector('parsererror');
+        if (parseError) {
+            console.error('[MathML] Parse error:', parseError);
+            return null;
+        }
+        
+        return doc.documentElement;
+    }
+
+    async displayCurrentStep() {
+        if (this.stepHistory.length === 0 || this.currentStepIndex < 0) {
+            console.log('[Display] No steps to display');
+            return;
+        }
+
+        const data = this.stepHistory[this.currentStepIndex];
+        console.log('[Display] Displaying step:', data);
+
+        const { mathWhiteboard } = this.elements;
+        const loadingSpinner = document.querySelector('.loading-spinner');
+        const replayButton = document.getElementById('replayAudioButton');
+        
+        // Hide loading spinner
+        if (loadingSpinner) {
+            loadingSpinner.style.display = 'none';
+        }
+        
+        // Display math in whiteboard
+        if (mathWhiteboard) {
+            console.log('[Display] Updating math content');
+            try {
+                mathWhiteboard.innerHTML = '';
+                const container = document.createElement('div');
+
+                // Handle MathML content if available, fallback to LaTeX
+                if (data.mathml) {
+                    console.log('[Display] Using MathML content');
+                    const mathmlElement = this.parseMathML(data.mathml);
+                    if (mathmlElement) {
+                        // Create a math element with proper namespace
+                        const mathElement = document.createElementNS('http://www.w3.org/1998/Math/MathML', 'math');
+                        // Import the parsed MathML into the current document
+                        const importedMathML = document.importNode(mathmlElement, true);
+                        mathElement.appendChild(importedMathML);
+                        container.appendChild(mathElement);
+                    } else {
+                        console.error('[Display] Failed to parse MathML, falling back to LaTeX');
+                        container.textContent = data.math || 'Error displaying mathematical content';
+                    }
+                } else if (data.math) {
+                    console.log('[Display] Falling back to LaTeX content');
+                    container.textContent = data.math;
+                }
+
+                mathWhiteboard.appendChild(container);
+                
+                // Trigger MathJax processing
+                if (window.MathJax) {
+                    console.log('[MathJax] Starting typeset');
+                    await window.MathJax.typesetPromise([mathWhiteboard]);
+                    console.log('[MathJax] Completed typeset');
+                } else {
+                    console.error('[MathJax] Not loaded');
+                    this.showError('Error displaying mathematical content');
+                }
+            } catch (error) {
+                console.error('[Display] Error displaying math:', error);
+                this.showError('Error displaying mathematical content');
+            }
+        }
+
+        // Store current audio data and update replay button
+        this.currentAudioData = data.audio;
+        if (replayButton) {
+            replayButton.disabled = !data.hasAudio || this.isPlayingAudio;
+            replayButton.onclick = () => this.replayCurrentAudio();
+        }
+
+        // Play audio if available
+        if (data.hasAudio && data.audio) {
+            console.log('Attempting to play audio');
+            try {
+                await this.playAudio(data.audio);
+            } catch (error) {
+                console.error('Error during audio playback:', error);
+            }
+        } else {
+            console.log('No audio data available for this step');
+        }
+    }
+
     async playAudio(base64Audio) {
         return new Promise((resolve, reject) => {
             if (!base64Audio) {
@@ -145,80 +242,6 @@ class MathboardSocket {
                 resolve();
             }
         });
-    }
-
-    async displayCurrentStep() {
-        if (this.stepHistory.length === 0 || this.currentStepIndex < 0) {
-            console.log('[Display] No steps to display');
-            return;
-        }
-
-        const data = this.stepHistory[this.currentStepIndex];
-        console.log('[Display] Displaying step:', data);
-
-        const { mathWhiteboard } = this.elements;
-        const loadingSpinner = document.querySelector('.loading-spinner');
-        const replayButton = document.getElementById('replayAudioButton');
-        
-        // Hide loading spinner
-        if (loadingSpinner) {
-            loadingSpinner.style.display = 'none';
-        }
-        
-        // Display math in whiteboard
-        if (mathWhiteboard) {
-            console.log('[Display] Updating math content');
-            try {
-                mathWhiteboard.innerHTML = '';
-                const mathElement = document.createElement('div');
-
-                // Handle MathML content if available, fallback to LaTeX
-                if (data.mathml) {
-                    console.log('[Display] Using MathML content');
-                    // Create a container for MathML
-                    const mathmlContainer = document.createElement('math');
-                    mathmlContainer.innerHTML = data.mathml;
-                    mathElement.appendChild(mathmlContainer);
-                } else if (data.math) {
-                    console.log('[Display] Falling back to LaTeX content');
-                    mathElement.textContent = data.math;
-                }
-
-                mathWhiteboard.appendChild(mathElement);
-                
-                // Trigger MathJax processing
-                if (window.MathJax) {
-                    console.log('[MathJax] Starting typeset');
-                    await window.MathJax.typesetPromise([mathWhiteboard]);
-                    console.log('[MathJax] Completed typeset');
-                } else {
-                    console.error('[MathJax] Not loaded');
-                    this.showError('Error displaying mathematical content');
-                }
-            } catch (error) {
-                console.error('[Display] Error displaying math:', error);
-                this.showError('Error displaying mathematical content');
-            }
-        }
-
-        // Store current audio data and update replay button
-        this.currentAudioData = data.audio;
-        if (replayButton) {
-            replayButton.disabled = !data.hasAudio || this.isPlayingAudio;
-            replayButton.onclick = () => this.replayCurrentAudio();
-        }
-
-        // Play audio if available
-        if (data.hasAudio && data.audio) {
-            console.log('Attempting to play audio');
-            try {
-                await this.playAudio(data.audio);
-            } catch (error) {
-                console.error('Error during audio playback:', error);
-            }
-        } else {
-            console.log('No audio data available for this step');
-        }
     }
 
     async replayCurrentAudio() {
