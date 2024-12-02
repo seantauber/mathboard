@@ -5,12 +5,12 @@ generate_explanation:
 
     Think of this as a teaching script where each step pairs:
     - Natural speech (what the teacher says while writing)
-    - LaTeX math (what's visible on the board at that moment)
+    - MathML math (what's visible on the board at that moment)
 
     Output Format:
     steps:
       - natural: "What the teacher says during this step"
-        math: "The complete LaTeX notation visible during this step"
+        math: "The complete MathML notation visible during this step"
 
     Important: Each step shows the complete board state. Previous content is not preserved between steps, so each math field must contain everything that should be visible at that moment.
 
@@ -39,18 +39,18 @@ generate_explanation:
 
     3. Mathematical Display Techniques:
        - Progressive Building:
-         * Use \\\\ for single line breaks
-         * For consecutive line breaks, separate with space: \\\\ \\\\
+         * Use <mspace linebreak="newline"/> for line breaks
+         * For consecutive line breaks, use multiple mspace elements
          * Keep original expression visible while showing work below
          * Show intermediate steps while maintaining context
          * Build complex expressions step by step
        
        - Visual Emphasis:
-         * Use \color{{blue}}{{...}} for highlighting
+         * Use mathcolor="blue" for highlighting
          * Use consistent color meanings (e.g., blue for current focus)
-         * Use \boxed{{...}} for boxing important elements
-         * Use \text{{...}} for annotations with proper spacing
-         * Example: \text{{This is }} \color{{blue}}{{x}} \text{{ squared}}
+         * Use <menclose notation="box"> for boxing important elements
+         * Use <mtext> for annotations with proper spacing
+         * Example: <math><mrow><mtext>This is </mtext><mi mathcolor="blue">x</mi><mtext> squared</mtext></mrow></math>
        
        - Layout Structure:
          * Original problem/expression typically at the top
@@ -81,10 +81,10 @@ generate_explanation:
          - NO special characters except standard punctuation
        math: 
          - MUST contain complete board state for each step
-         - Valid LaTeX with correct syntax and proper spacing
-         - Use \color{{color}}{{content}} for colored text
-         - Use \text{{...}} for text mode with proper spacing
-         - Use \\\\ for line breaks (with space between consecutive breaks)
+         - Valid MathML with correct syntax and proper spacing
+         - Use mathcolor attribute for colored text
+         - Use <mtext> for text mode with proper spacing
+         - Use <mspace linebreak="newline"/> for line breaks
          - Include all previous relevant work
          - Ensure all mathematical expressions are correct
 
@@ -97,26 +97,77 @@ generate_explanation:
        - Use color and emphasis to guide understanding
        - Verify mathematical accuracy throughout explanation
 
-    Example LaTeX Formatting:
-    \text{{The least common denominator is: }} \color{{blue}}{{6}} \\\\
-    \frac{{1}}{{2}} = \frac{{1 \cdot \color{{blue}}{{3}}}}{{2 \cdot \color{{blue}}{{3}}}} = \frac{{\color{{blue}}{{3}}}}{{\color{{blue}}{{6}}}}
+    Example MathML Formatting:
+    <math>
+      <mrow>
+        <mtext>The least common denominator is: </mtext>
+        <mn mathcolor="blue">6</mn>
+        <mspace linebreak="newline"/>
+        <mfrac>
+          <mn>1</mn>
+          <mn>2</mn>
+        </mfrac>
+        <mo>=</mo>
+        <mfrac>
+          <mrow><mn>1</mn><mo>⋅</mo><mn mathcolor="blue">3</mn></mrow>
+          <mrow><mn>2</mn><mo>⋅</mo><mn mathcolor="blue">3</mn></mrow>
+        </mfrac>
+        <mo>=</mo>
+        <mfrac>
+          <mn mathcolor="blue">3</mn>
+          <mn mathcolor="blue">6</mn>
+        </mfrac>
+      </mrow>
+    </math>
 
-    Multi-line Example with Consecutive Breaks:
-    x^2 + 5x + 6 = 0 \\\\ \\\\
-    \text{{Factor into: }} (x + 2)(x + 3) = 0 \\\\ \\\\
-    \text{{Solutions: }} x = -2 \text{{ or }} x = -3
+    Multi-line Example:
+    <math>
+      <mrow>
+        <msup><mi>x</mi><mn>2</mn></msup>
+        <mo>+</mo>
+        <mn>5</mn>
+        <mi>x</mi>
+        <mo>+</mo>
+        <mn>6</mn>
+        <mo>=</mo>
+        <mn>0</mn>
+        <mspace linebreak="newline"/>
+        <mspace linebreak="newline"/>
+        <mtext>Factor into: </mtext>
+        <mo>(</mo>
+        <mi>x</mi>
+        <mo>+</mo>
+        <mn>2</mn>
+        <mo>)</mo>
+        <mo>(</mo>
+        <mi>x</mi>
+        <mo>+</mo>
+        <mn>3</mn>
+        <mo>)</mo>
+        <mo>=</mo>
+        <mn>0</mn>
+        <mspace linebreak="newline"/>
+        <mspace linebreak="newline"/>
+        <mtext>Solutions: </mtext>
+        <mi>x</mi>
+        <mo>=</mo>
+        <mo>-</mo>
+        <mn>2</mn>
+        <mtext> or </mtext>
+        <mi>x</mi>
+        <mo>=</mo>
+        <mo>-</mo>
+        <mn>3</mn>
+      </mrow>
+    </math>
 
-    Alignment Example:
-    \text{{Original equation: }} &x^2 + 5x + 6 = 0 \\\\
-    \text{{Factored form: }} &(x + 2)(x + 3) = 0 \\\\
-    \text{{Solutions: }} &x = -2 \text{{ or }} x = -3
   agent: math_teacher
-  expected_output: "JSON with paired speech and LaTeX steps"
+  expected_output: "JSON with paired speech and MathML steps"
 
 optimize_visual_narrative:
   description: >
     Transform a mathematical explanation into an engaging visual narrative by enhancing
-    the LaTeX output with progressive build-up and visual emphasis that synchronizes
+    the MathML output with progressive build-up and visual emphasis that synchronizes
     with the spoken explanation.
     Input will be the output from generate_explanation. Your task is to:
     1. Break down steps into optimal visual frames
@@ -128,7 +179,7 @@ optimize_visual_narrative:
     Output Structure:
     * frames: list of visual teaching moments, each with:
       - natural: what the teacher says
-      - math: complete LaTeX board state with visual enhancements
+      - math: complete MathML board state with visual enhancements
 
     Visual Enhancement Examples:
 
@@ -136,43 +187,87 @@ optimize_visual_narrative:
 
     Frame 1:
     natural: Let's start with a quadratic equation in standard form.
-    math: ax^2 + bx + c = 0
+    math: <math><mrow><mi>a</mi><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>b</mi><mi>x</mi><mo>+</mo><mi>c</mi><mo>=</mo><mn>0</mn></mrow></math>
 
     Frame 2:
     natural: First, look at the coefficient of x squared, which we call a.
-    math: \color{{blue}}{{a}}x^2 + bx + c = 0
+    math: <math><mrow><mi mathcolor="blue">a</mi><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>b</mi><mi>x</mi><mo>+</mo><mi>c</mi><mo>=</mo><mn>0</mn></mrow></math>
 
     Frame 3:
     natural: These three terms form our quadratic expression.
-    math: \underbrace{{\color{{blue}}{{a}}x^2}}_{{{{\text{{first term}}}} + \underbrace{{bx}}_{{{{\text{{second term}}}} + \underbrace{{c}}_{{{{\text{{third term}}}} = 0
+    math: <math>
+      <mrow>
+        <munder>
+          <mrow><mi mathcolor="blue">a</mi><msup><mi>x</mi><mn>2</mn></msup></mrow>
+          <mtext>first term</mtext>
+        </munder>
+        <mo>+</mo>
+        <munder>
+          <mrow><mi>b</mi><mi>x</mi></mrow>
+          <mtext>second term</mtext>
+        </munder>
+        <mo>+</mo>
+        <munder>
+          <mi>c</mi>
+          <mtext>third term</mtext>
+        </munder>
+        <mo>=</mo>
+        <mn>0</mn>
+      </mrow>
+    </math>
 
     Visual Focus Example - Factoring:
 
     Frame 1:
     natural: To factor this expression, we need to find numbers that multiply to give us positive 6 and add to give us positive 5.
-    math: x^2 + 5x + 6 = 0 \\\\ \text{{Need: product = 6, sum = 5}}
+    math: <math>
+      <mrow>
+        <msup><mi>x</mi><mn>2</mn></msup>
+        <mo>+</mo>
+        <mn>5</mn>
+        <mi>x</mi>
+        <mo>+</mo>
+        <mn>6</mn>
+        <mo>=</mo>
+        <mn>0</mn>
+        <mspace linebreak="newline"/>
+        <mtext>Need: product = 6, sum = 5</mtext>
+      </mrow>
+    </math>
 
     Frame 2:
     natural: Let's list out the factors of 6 and find the pair that adds to 5.
-    math: x^2 + 5x + 6 = 0 \\\\ \text{{Factors of 6:}} \\\\ 1 \times 6 = 6, \text{{ sum }} = 7 \\\\ \color{{blue}}{{2 \times 3 = 6, \text{{ sum }} = 5}} \checkmark
-
-    Frame 3:
-    natural: Perfect! We'll use 2 and 3 as our factors.
-    math: x^2 + 5x + 6 = 0 \\\\ \text{{Using our factors:}} \\\\ (x + 2)(x + 3)
-
-    Step-by-Step Solution Example:
-
-    Frame 1:
-    natural: Let's solve this linear equation step by step.
-    math: 3x + 15 = 6
-
-    Frame 2:
-    natural: First, subtract 15 from both sides.
-    math: 3x + \color{{red}}{{15}} = 6 \\\\ \color{{blue}}{{\downarrow}} \text{{ subtract 15}} \\\\ 3x = -9
-
-    Frame 3:
-    natural: Now divide both sides by 3 to isolate x.
-    math: 3x = -9 \\\\ \color{{blue}}{{\downarrow}} \text{{ divide by 3}} \\\\ x = -3
+    math: <math>
+      <mrow>
+        <msup><mi>x</mi><mn>2</mn></msup>
+        <mo>+</mo>
+        <mn>5</mn>
+        <mi>x</mi>
+        <mo>+</mo>
+        <mn>6</mn>
+        <mo>=</mo>
+        <mn>0</mn>
+        <mspace linebreak="newline"/>
+        <mtext>Factors of 6:</mtext>
+        <mspace linebreak="newline"/>
+        <mn>1</mn>
+        <mo>×</mo>
+        <mn>6</mn>
+        <mo>=</mo>
+        <mn>6</mn>
+        <mtext>, sum = 7</mtext>
+        <mspace linebreak="newline"/>
+        <mrow mathcolor="blue">
+          <mn>2</mn>
+          <mo>×</mo>
+          <mn>3</mn>
+          <mo>=</mo>
+          <mn>6</mn>
+          <mtext>, sum = 5</mtext>
+        </mrow>
+        <mo>✓</mo>
+      </mrow>
+    </math>
 
     Requirements:
 
@@ -192,14 +287,14 @@ optimize_visual_narrative:
       - Use appropriate pacing
 
     3. Enhancement Techniques:
-      - Colors (\color{{name}}{{content}})
-      - Boxes (\boxed{{content}}, \fbox{{content}})
-      - Braces (\underbrace{{content}}_{{{{\text{{label}}}})
-      - Annotations (\text{{content}})
-      - Arrows (\rightarrow, \downarrow)
-      - Alignment environments for related equations
-      - Checkmarks (\checkmark) for completed steps
-      - Line breaks (\\\\ with space between consecutive breaks)
+      - Colors (mathcolor attribute)
+      - Boxes (<menclose notation="box">)
+      - Underscores (<munder>)
+      - Annotations (<mtext>)
+      - Arrows (→, ↓)
+      - Alignment using <mtable> and <mtr> for related equations
+      - Checkmarks (✓) for completed steps
+      - Line breaks (<mspace linebreak="newline"/>)
 
     4. Frame Guidelines:
       - Each frame must contain complete board state

@@ -18,3 +18,11 @@ test = "math_tutor.main:test"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["src/tests"]
+addopts = "-v"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]

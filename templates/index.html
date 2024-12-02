@@ -16,7 +16,7 @@
     
     <!-- Load MathJax -->
     <script src="{{ url_for('static', filename='js/mathjax-config.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-svg.js" id="MathJax-script" async></script>
     
     <!-- Socket.IO -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
@@ -36,6 +36,42 @@
                         <input type="text" id="mathInput" class="math-input" 
                                placeholder="Ask a math question (e.g., 'How do you add fractions?')">
                         <button id="askButton" class="ask-button">Ask</button>
+                    </div>
+                    
+                    <!-- Math Symbol Toolbar -->
+                    <div class="math-toolbar">
+                        <div class="toolbar-section">
+                            <h4>Basic Operations</h4>
+                            <button class="symbol-btn" data-mathml="<math><mo>+</mo></math>">+</button>
+                            <button class="symbol-btn" data-mathml="<math><mo>−</mo></math>">−</button>
+                            <button class="symbol-btn" data-mathml="<math><mo>×</mo></math>">×</button>
+                            <button class="symbol-btn" data-mathml="<math><mo>÷</mo></math>">÷</button>
+                            <button class="symbol-btn" data-mathml="<math><mo>=</mo></math>">=</button>
+                        </div>
+                        <div class="toolbar-section">
+                            <h4>Fractions</h4>
+                            <button class="symbol-btn" data-mathml="<math><mfrac><mrow></mrow><mrow></mrow></mfrac></math>">a/b</button>
+                            <button class="symbol-btn" data-mathml="<math><msqrt><mrow></mrow></msqrt></math>">√</button>
+                        </div>
+                        <div class="toolbar-section">
+                            <h4>Exponents</h4>
+                            <button class="symbol-btn" data-mathml="<math><msup><mi>x</mi><mn>2</mn></msup></math>">x²</button>
+                            <button class="symbol-btn" data-mathml="<math><msup><mi>x</mi><mn>3</mn></msup></math>">x³</button>
+                        </div>
+                        <div class="toolbar-section">
+                            <h4>Greek Letters</h4>
+                            <button class="symbol-btn" data-mathml="<math><mi>π</mi></math>">π</button>
+                            <button class="symbol-btn" data-mathml="<math><mi>θ</mi></math>">θ</button>
+                            <button class="symbol-btn" data-mathml="<math><mi>Δ</mi></math>">Δ</button>
+                        </div>
+                    </div>
+
+                    <!-- Format Toggle -->
+                    <div class="format-toggle">
+                        <label>
+                            <input type="checkbox" id="mathmlToggle" checked>
+                            Use MathML (recommended)
+                        </label>
                     </div>
                     
                     <!-- Quick Questions -->
@@ -72,13 +108,16 @@
                     
                     <!-- Error Display -->
                     <div id="errorDisplay" class="error-message"></div>
+
+                    <!-- MathML Preview -->
+                    <div id="mathPreview" class="math-preview"></div>
                 </section>
             </div>
         </main>
     </div>
 
     <!-- Custom Scripts -->
-    <script type="module" src="{{ url_for('static', filename='js/latex-helpers.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/math-helpers.js') }}"></script>
     <script type="module" src="{{ url_for('static', filename='js/socket.js') }}"></script>
     <script type="module" src="{{ url_for('static', filename='js/whiteboard.js') }}"></script>
 </body>

@@ -25,6 +25,7 @@ class MathboardSocket {
                 currentRequestId: this.currentRequestId,
                 queueLength: this.stepQueue.length,
                 stepData: data,
+                format: data.mathml ? 'MathML' : 'LaTeX',
                 hasAudio: data.hasAudio,
                 audioLength: data.audioLength,
                 audioDataPresent: !!data.audio,
@@ -165,12 +166,24 @@ class MathboardSocket {
         }
         
         // Display math in whiteboard
-        if (data.math && mathWhiteboard) {
+        if (mathWhiteboard) {
             console.log('[Display] Updating math content');
             try {
                 mathWhiteboard.innerHTML = '';
                 const mathElement = document.createElement('div');
-                mathElement.textContent = data.math;
+
+                // Handle MathML content if available, fallback to LaTeX
+                if (data.mathml) {
+                    console.log('[Display] Using MathML content');
+                    // Create a container for MathML
+                    const mathmlContainer = document.createElement('math');
+                    mathmlContainer.innerHTML = data.mathml;
+                    mathElement.appendChild(mathmlContainer);
+                } else if (data.math) {
+                    console.log('[Display] Falling back to LaTeX content');
+                    mathElement.textContent = data.math;
+                }
+
                 mathWhiteboard.appendChild(mathElement);
                 
                 // Trigger MathJax processing

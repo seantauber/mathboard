@@ -102,6 +102,97 @@ body {
     transform: translateY(-1px);
 }
 
+/* Math Symbol Toolbar */
+.math-toolbar {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.toolbar-section {
+    margin-bottom: 1.5rem;
+}
+
+.toolbar-section:last-child {
+    margin-bottom: 0;
+}
+
+.toolbar-section h4 {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.symbol-btn {
+    padding: 0.5rem 1rem;
+    margin: 0.25rem;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.symbol-btn:hover {
+    background-color: var(--surface-color);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Format Toggle */
+.format-toggle {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background-color: var(--surface-color);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+}
+
+.format-toggle label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.format-toggle input[type="checkbox"] {
+    width: 1.2rem;
+    height: 1.2rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+/* Math Preview */
+.math-preview {
+    width: 100%;
+    max-width: 900px;
+    min-height: 100px;
+    margin-top: 2rem;
+    padding: 1rem;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    display: none;
+}
+
+.math-preview.active {
+    display: block;
+}
+
 /* Quick Questions */
 .quick-questions {
     text-align: center;
@@ -344,5 +435,18 @@ body {
 
     .nav-button {
         width: 100%;
+    }
+
+    .math-toolbar {
+        padding: 1rem;
+    }
+
+    .symbol-btn {
+        padding: 0.5rem;
+        margin: 0.125rem;
+    }
+
+    .toolbar-section {
+        margin-bottom: 1rem;
     }
 }

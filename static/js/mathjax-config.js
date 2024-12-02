@@ -1,7 +1,16 @@
 // MathJax Configuration
 window.MathJax = {
     loader: {
-        load: ['[tex]/color', '[tex]/ams', '[tex]/noerrors', '[tex]/noundefined', '[tex]/newcommand', '[tex]/configmacros']
+        load: [
+            '[tex]/color', 
+            '[tex]/ams', 
+            '[tex]/noerrors', 
+            '[tex]/noundefined', 
+            '[tex]/newcommand', 
+            '[tex]/configmacros',
+            'input/mml',  // Add MathML input processor
+            'output/svg'  // Explicit SVG output processor
+        ]
     },
     tex: {
         packages: {
@@ -29,18 +38,32 @@ window.MathJax = {
             alignat: ['\\\\', '\\\\']
         }
     },
+    mml: {
+        // MathML-specific configuration
+        parseError: (node) => {
+            console.warn('MathML Parse Error:', node);
+            return node;
+        },
+        verify: {
+            // Verification options for MathML input
+            checkArity: true,
+            checkAttributes: true,
+            fullErrors: true,
+            fixMmultiscripts: true,
+            fixMtables: true
+        }
+    },
     svg: {
         fontCache: 'global',
         scale: 1,
         minScale: .5,
         mtextInheritFont: false,
         merrorInheritFont: true,
-        mathmlSpacing: false,
+        mathmlSpacing: true, // Enable MathML spacing rules
         skipAttributes: {},
         exFactor: .5,
         displayAlign: 'center',
         displayIndent: '0',
-        fontCache: 'global',
         localID: null,
         internalSpeechTitles: true,
         titleID: 0
@@ -61,9 +84,12 @@ window.MathJax = {
             console.log('MathJax configuration loaded with settings:', {
                 packages: MathJax.config.tex.packages,
                 environments: MathJax.config.tex.environments,
-                displayMath: MathJax.config.tex.displayMath
+                displayMath: MathJax.config.tex.displayMath,
+                mmlEnabled: !!MathJax.config.mml
             });
-        }
+        },
+        input: ['tex', 'mml'], // Enable both TeX and MathML input
+        output: 'svg'          // Use SVG output for both
     }
 };
 
@@ -75,6 +101,10 @@ if (window.MathJax) {
     document.addEventListener('DOMContentLoaded', () => {
         if (window.MathJax) {
             console.log('MathJax became available after DOM load');
+            console.log('MathML support status:', {
+                inputProcessor: !!MathJax.config.mml,
+                outputProcessor: MathJax.config.svg.mathmlSpacing
+            });
         } else {
             console.log('MathJax still not available after DOM load');
         }

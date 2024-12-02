@@ -1,0 +1,25 @@
+{
+  "problem": "Adding one half and one third.",
+  "steps": [
+    {
+      "natural": "Let's begin by understanding how to add fractions step by step. Here is an example, adding one half and one third.",
+      "math": "<math><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac><mo>+</mo><mfrac><mn>1</mn><mn>3</mn></mfrac></mrow></math>"
+    },
+    {
+      "natural": "Now, to add these fractions, we need a common denominator. Find the least common denominator of two and three, which is six.",
+      "math": "<math><mrow><mtext>The least common denominator is: </mtext><mn mathcolor=\"blue\">6</mn></mrow></math>"
+    },
+    {
+      "natural": "Next, convert each fraction to have the common denominator of six. Multiply the numerator and the denominator of one half by three, and one third by two.",
+      "math": "<math><mrow><munder><mfrac><mn>1</mn><mn>2</mn></mfrac><mo>=</mo><mfrac><mrow><mn>1</mn><mo>⋅</mo><mn mathcolor=\"blue\">3</mn></mrow><mrow><mn>2</mn><mo>⋅</mo><mn mathcolor=\"blue\">3</mn></mrow></mfrac></munder><mo>=</mo><mfrac><mn mathcolor=\"blue\">3</mn><mn mathcolor=\"blue\">6</mn></mfrac><munder><mspace linebreak=\"newline\"/><mfrac><mn>1</mn><mn>3</mn></mfrac><mo>=</mo><mfrac><mrow><mn>1</mn><mo>⋅</mo><mn mathcolor=\"blue\">2</mn></mrow><mrow><mn>3</mn><mo>⋅</mo><mn mathcolor=\"blue\">2</mn></mrow></mfrac></munder><mo>=</mo><mfrac><mn mathcolor=\"blue\">2</mn><mn mathcolor=\"blue\">6</mn></mfrac></mrow></math>"
+    },
+    {
+      "natural": "Then, now that both fractions have the same denominator, we can add them. Add the numerators, which results in five, keeping the same denominator.",
+      "math": "<math><mrow><mfrac><mn>3</mn><mn>6</mn></mfrac><mo>+</mo><mfrac><mn>2</mn><mn>6</mn></mfrac><mo>=</mo><menclose notation=\"box\"><mfrac><mrow><mn mathcolor=\"blue\">3</mn><mo>+</mo><mn mathcolor=\"blue\">2</mn></mrow><mn>6</mn></mfrac></menclose><mo>=</mo><mfrac><mn mathcolor=\"blue\">5</mn><mn>6</mn></mfrac></mrow></math>"
+    },
+    {
+      "natural": "Therefore, adding one half and one third gives us five sixths.",
+      "math": "<math><mrow><mtext>The result of </mtext><mfrac><mn>1</mn><mn>2</mn></mfrac><mo>+</mo><mfrac><mn>1</mn><mn>3</mn></mfrac><mtext> is: </mtext><menclose notation=\"box\"><mfrac><mn mathcolor=\"blue\">5</mn><mn>6</mn></mfrac></menclose></mrow></math>"
+    }
+  ]
+}
