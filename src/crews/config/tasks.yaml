@@ -8,9 +8,15 @@ generate_explanation:
     - MathML math (what's visible on the board at that moment)
 
     Output Format:
-    steps:
-      - natural: "What the teacher says during this step"
-        math: "The complete MathML notation visible during this step"
+    {{
+      "problem": "Original problem or concept being explained",
+      "steps": [
+        {{
+          "natural": "What the teacher says during this step",
+          "math": "The complete MathML notation visible during this step"
+        }}
+      ]
+    }}
 
     Important: Each step shows the complete board state. Previous content is not preserved between steps, so each math field must contain everything that should be visible at that moment.
 
@@ -305,30 +311,35 @@ generate_explanation:
        - Maintain clear visual separation between text and math
 
     Example Multi-step Solution:
-    <math>
-      <mtable columnalign="left">
-        <mtr>
-          <mtd>
-            <mrow>
-              <mtext>Let's solve this quadratic equation:</mtext>
-            </mrow>
-          </mtd>
-        </mtr>
-        <mtr>
-          <mtd>
-            <mrow>
-              <msup><mi>x</mi><mn>2</mn></msup>
-              <mo>+</mo>
-              <mn>5</mn>
-              <mi>x</mi>
-              <mo>+</mo>
-              <mn>6</mn>
-              <mo>=</mo>
-              <mn>0</mn>
-            </mrow>
-          </mtd>
-        </mtr>
-        <mtr>
+    {{
+      "problem": "Solve the quadratic equation x² + 5x + 6 = 0",
+      "steps": [
+        {{
+          "natural": "Let's solve this quadratic equation step by step.",
+          "math": "<math>
+            <mtable columnalign=\"left\">
+              <mtr>
+                <mtd>
+                  <mrow>
+                    <mtext>Let's solve this quadratic equation:</mtext>
+                  </mrow>
+                </mtd>
+              </mtr>
+              <mtr>
+                <mtd>
+                  <mrow>
+                    <msup><mi>x</mi><mn>2</mn></msup>
+                    <mo>+</mo>
+                    <mn>5</mn>
+                    <mi>x</mi>
+                    <mo>+</mo>
+                    <mn>6</mn>
+                    <mo>=</mo>
+                    <mn>0</mn>
+                  </mrow>
+                </mtd>
+              </mtr>
+            <mtr>
           <mtd>
             <mrow>
               <mtext>Let's identify each term:</mtext>
@@ -392,8 +403,11 @@ generate_explanation:
             </mrow>
           </mtd>
         </mtr>
-      </mtable>
-    </math>
+            </mtable>
+          </math>"
+        }}
+      ]
+    }}
 
   agent: math_teacher
   expected_output: "JSON with paired speech and MathML steps"
@@ -411,15 +425,21 @@ optimize_visual_narrative:
     5. Verify mathematical correctness of all expressions
 
     Output Structure:
-    * frames: list of visual teaching moments, each with:
-      - natural: what the teacher says
-      - math: complete MathML board state with visual enhancements
+    {{
+      "problem": "Original problem or concept being explained",
+      "steps": [
+        {{
+          "natural": "What the teacher says",
+          "math": "Complete MathML board state with visual enhancements"
+        }}
+      ]
+    }}
 
     Visual Enhancement Examples:
 
     Progressive Build-up Example - Introducing Quadratic Formula:
 
-    Frame 1:
+    Step 1:
     natural: Let's start with a quadratic equation in standard form.
     math: <math>
       <mtable columnalign="left">
@@ -446,7 +466,7 @@ optimize_visual_narrative:
       </mtable>
     </math>
 
-    Frame 2:
+    Step 2:
     natural: First, look at the coefficient of x squared, which we call a.
     math: <math>
       <mtable columnalign="left">
@@ -473,7 +493,7 @@ optimize_visual_narrative:
       </mtable>
     </math>
 
-    Frame 3:
+    Step 3:
     natural: These three terms form our quadratic expression.
     math: <math>
       <mtable columnalign="left">
@@ -580,3 +600,31 @@ optimize_visual_narrative:
   expected_output: "JSON with enhanced visual narrative"
   context:
     - generate_explanation
+    
+validate_mathml:
+  description: >
+    Validate and improve the MathML expressions in the mathematical explanation.
+    Your task is to:
+    1. Check each MathML expression for validity using the MathML Validator tool
+    2. Fix any validation errors found
+    3. Ensure all expressions follow MathML best practices
+    4. Verify mathematical correctness is maintained
+    5. Return the validated and improved explanation
+
+    Input will be the output from optimize_visual_narrative.
+
+    Output Format:
+    {{
+      "problem": "Original problem or concept being explained",
+      "steps": [
+        {{
+          "natural": "What the teacher says",
+          "math": "Validated and improved MathML"
+        }}
+      ]
+    }}
+    
+  agent: math_reviewer
+  expected_output: "JSON with validated MathML steps"
+  context:
+    - optimize_visual_narrative

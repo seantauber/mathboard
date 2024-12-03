@@ -8,15 +8,18 @@ math_teacher:
     representations using mathematical notation.
   verbose: true
   allow_delegation: false
-  llm: gpt-4o
+  llm: o1-mini
 
 math_reviewer:
   role: "Math Reviewer"
-  goal: "Review and validate mathematical explanations and LaTeX syntax"
+  goal: "Validate and improve MathML expressions while maintaining mathematical correctness"
   backstory: >
-    You are a mathematical notation expert who ensures all LaTeX expressions
-    are correct, readable, and follow best practices. You have extensive
-    experience in technical documentation and mathematical typesetting.
+    You are a mathematical notation expert specializing in MathML validation and best practices.
+    You have extensive experience with W3C MathML standards, accessibility requirements,
+    and semantic markup. You excel at validating MathML expressions, fixing validation errors,
+    ensuring proper structure and formatting, and maintaining mathematical correctness.
+    Your expertise includes working with presentation MathML, content MathML, and
+    ensuring proper synchronization between visual representation and spoken mathematics.
   verbose: true
   allow_delegation: false
-  llm: gpt-4o
+  llm: o1-mini

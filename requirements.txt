@@ -9,6 +9,8 @@ pydantic
 pyyaml
 typing-extensions
 redis
+lxml
+
 # Development dependencies (optional)
 pytest
 pytest-asyncio

@@ -1,6 +1,7 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from src.crews.tools.latex_tools import LatexFormatter
+from src.crews.tools.mathml_validator_tool import MathMLValidatorTool
 from src.models.math_models import MathExplanation
 
 @CrewBase
@@ -18,13 +19,22 @@ class MathTutorCrew():
     def math_reviewer(self) -> Agent:
         return Agent(
             config=self.agents_config['math_reviewer'],
+            tools=[MathMLValidatorTool()],
             verbose=True
         )
 
     @task
     def generate_explanation(self) -> Task:
         return Task(
-            config=self.tasks_config['generate_explanation']
+            config=self.tasks_config['generate_explanation'],
+            output_pydantic=MathExplanation
+        )
+
+    @task
+    def validate_mathml(self) -> Task:
+        return Task(
+            config=self.tasks_config['validate_mathml'],
+            output_pydantic=MathExplanation
         )
 
     @task
@@ -37,38 +47,12 @@ class MathTutorCrew():
     @crew
     def crew(self) -> Crew:
         return Crew(
-            agents=[self.math_teacher()],
-            tasks=[self.generate_explanation(), self.optimize_visual_narrative()],
+            agents=[self.math_teacher(), self.math_reviewer()],
+            tasks=[
+                self.generate_explanation(),
+                self.optimize_visual_narrative()
+                # self.validate_mathml()
+            ],
             process=Process.sequential,
             verbose=True
         )
-
-    # def _update_task_contexts(self, query: str) -> None:
-    #     """Set the user query in task contexts"""
-    #     for task_name in self.tasks_config:
-    #         self.tasks_config[task_name]['context'] = {
-    #             'user_query': query
-    #         }
-
-    # async def process_math_query(self, query: str) -> dict:
-    #     """Process a math query through the crew workflow"""
-    #     try:
-    #         # Set the query in task contexts
-    #         self._update_task_contexts(query)
-
-    #         # Run the crew
-    #         result = await self.crew.kickoff()
-            
-    #         # Format any LaTeX in the result
-    #         formatter = LatexFormatter()
-    #         for step in result['steps']:
-    #             step['math'] = formatter._run(step['math'])
-            
-    #         return result
-
-    #     except Exception as e:
-    #         print(f"Error in math crew: {e}")
-    #         return {
-    #             "error": True,
-    #             "message": str(e)
-    #         }

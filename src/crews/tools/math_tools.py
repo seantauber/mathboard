@@ -43,7 +43,8 @@ class MathMLFormatter(BaseTool):
             # Fix any common issues
             mathml = fix_common_mathml_issues(mathml)
             # Validate the result
-            if not validate_mathml(mathml):
+            is_valid, error_msg = validate_mathml(mathml)
+            if not is_valid:
                 return text  # Return original if validation fails
             return mathml
         except Exception as e:
@@ -82,15 +83,21 @@ class MathMLValidator(BaseTool):
             mathml = sanitize_mathml(mathml)
             
             # Validate
-            if not validate_mathml(mathml):
+            is_valid, error_msg = validate_mathml(mathml)
+            if not is_valid:
                 # Try to fix common issues
                 mathml = fix_common_mathml_issues(mathml)
                 
                 # Validate again after fixes
-                if not validate_mathml(mathml):
+                is_valid, error_msg = validate_mathml(mathml)
+                if not is_valid:
+                    # Get detailed error information
                     errors = parse_mathml_errors(mathml)
-                    error_msg = "; ".join([e["message"] for e in errors])
-                    return f"Invalid MathML expression that couldn't be automatically fixed: {error_msg}"
+                    error_details = "\n".join([
+                        f"Line {error['line']}: {error['message']} (Type: {error['type']})"
+                        for error in errors
+                    ])
+                    return f"Invalid MathML expression that couldn't be automatically fixed:\n{error_details}"
             
             return mathml
         except Exception as e:
@@ -115,9 +122,11 @@ class LaTeXToMathMLConverter(BaseTool):
             mathml = latex_to_mathml(latex)
             
             # Validate the resulting MathML
-            if not validate_mathml(mathml):
+            is_valid, error_msg = validate_mathml(mathml)
+            if not is_valid:
                 mathml = fix_common_mathml_issues(mathml)
-                if not validate_mathml(mathml):
+                is_valid, error_msg = validate_mathml(mathml)
+                if not is_valid:
                     return "Conversion resulted in invalid MathML"
             
             return mathml

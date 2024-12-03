@@ -1,26 +1,43 @@
 import re
 from typing import Optional, List, Dict, Tuple
 from xml.etree import ElementTree as ET
+from lxml import etree
 
 # ===== MathML Functions =====
 
-def validate_mathml(expression: str) -> bool:
-    """Validate MathML expression for basic syntax."""
+def validate_mathml(expression: str) -> Tuple[bool, Optional[str]]:
+    """
+    Validate MathML expression using both basic syntax and DTD validation.
+    Returns a tuple of (is_valid, error_message).
+    """
     try:
-        # Try parsing as XML
+        # First try basic XML parsing
         root = ET.fromstring(expression)
         
         # Check if root element is 'math'
         if root.tag != 'math':
-            return False
+            return False, "Root element must be 'math'"
             
-        # Validate required attributes
+        # Add xmlns if missing
         if 'xmlns' not in root.attrib:
             root.set('xmlns', 'http://www.w3.org/1998/Math/MathML')
+            expression = ET.tostring(root, encoding='unicode')
+        
+        # Now do thorough validation with lxml and DTD
+        parser = etree.XMLParser(dtd_validation=True, load_dtd=True)
+        try:
+            etree.fromstring(expression, parser)
+            return True, None
+        except etree.XMLSyntaxError as e:
+            # Collect all errors from the error log
+            error_log = e.error_log
+            errors = [f"Line {error.line}: {error.message}" for error in error_log]
+            return False, "\n".join(errors)
             
-        return True
-    except ET.ParseError:
-        return False
+    except ET.ParseError as e:
+        return False, f"XML Parse Error: {str(e)}"
+    except Exception as e:
+        return False, str(e)
 
 def sanitize_mathml(expression: str) -> str:
     """Sanitize MathML expression for safety."""
@@ -45,6 +62,45 @@ def sanitize_mathml(expression: str) -> str:
         return ET.tostring(root, encoding='unicode')
     except ET.ParseError:
         return expression
+
+def fix_common_mathml_issues(mathml: str) -> str:
+    """Fix common MathML syntax issues."""
+    try:
+        # Try parsing with lxml first to get detailed error information
+        parser = etree.XMLParser(dtd_validation=True, load_dtd=True, recover=True)
+        try:
+            root = etree.fromstring(mathml, parser)
+        except etree.XMLSyntaxError as e:
+            # Use error information to guide fixes
+            for error in e.error_log:
+                if "Missing required element" in error.message:
+                    # Add missing required elements
+                    if "mrow" in error.message:
+                        mathml = re.sub(r'<(mfrac|msup|msub)>([^<]+)', r'<\1><mrow>\2</mrow>', mathml)
+                elif "Element" in error.message and "not allowed here" in error.message:
+                    # Fix element nesting
+                    mathml = re.sub(r'<math>([^<]+)', r'<math><mrow>\1</mrow>', mathml)
+
+        # Now try with ElementTree for more basic fixes
+        root = ET.fromstring(mathml)
+        
+        # Ensure proper nesting of mrow elements
+        for element in root.iter():
+            if len(element) > 1 and element.tag != 'mrow':
+                children = list(element)
+                mrow = ET.Element('mrow')
+                for child in children:
+                    element.remove(child)
+                    mrow.append(child)
+                element.append(mrow)
+        
+        # Add missing xmlns attribute
+        if 'xmlns' not in root.attrib:
+            root.set('xmlns', 'http://www.w3.org/1998/Math/MathML')
+        
+        return ET.tostring(root, encoding='unicode')
+    except (ET.ParseError, etree.XMLSyntaxError):
+        return mathml
 
 def format_mathml(expression: str) -> str:
     """Format MathML expression for display."""
@@ -107,29 +163,6 @@ def latex_to_mathml(latex: str) -> str:
     
     return format_mathml(result)
 
-def fix_common_mathml_issues(mathml: str) -> str:
-    """Fix common MathML syntax issues."""
-    try:
-        root = ET.fromstring(mathml)
-        
-        # Ensure proper nesting of mrow elements
-        for element in root.iter():
-            if len(element) > 1 and element.tag != 'mrow':
-                children = list(element)
-                mrow = ET.Element('mrow')
-                for child in children:
-                    element.remove(child)
-                    mrow.append(child)
-                element.append(mrow)
-        
-        # Add missing xmlns attribute
-        if 'xmlns' not in root.attrib:
-            root.set('xmlns', 'http://www.w3.org/1998/Math/MathML')
-        
-        return ET.tostring(root, encoding='unicode')
-    except ET.ParseError:
-        return mathml
-
 def natural_text_to_mathml(text: str) -> str:
     """Convert natural language math expressions to MathML."""
     # First convert to LaTeX as an intermediate step
@@ -137,26 +170,19 @@ def natural_text_to_mathml(text: str) -> str:
     # Then convert LaTeX to MathML
     return latex_to_mathml(latex)
 
-def parse_mathml_errors(error_log: str) -> List[Dict[str, str]]:
+def parse_mathml_errors(mathml: str) -> List[Dict[str, str]]:
     """Parse MathML errors into structured format."""
     errors = []
-    error_patterns = [
-        (r'Invalid tag: (\w+)', 'invalid_tag'),
-        (r'Missing required attribute: (\w+)', 'missing_attribute'),
-        (r'Invalid attribute value: (\w+)', 'invalid_attribute'),
-        (r'Malformed XML', 'malformed_xml')
-    ]
-    
-    for line in error_log.split('\n'):
-        for pattern, error_type in error_patterns:
-            match = re.search(pattern, line)
-            if match:
-                errors.append({
-                    'type': error_type,
-                    'message': line.strip(),
-                    'details': match.group(1) if match.groups() else None
-                })
-    
+    try:
+        parser = etree.XMLParser(dtd_validation=True, load_dtd=True)
+        etree.fromstring(mathml, parser)
+    except etree.XMLSyntaxError as e:
+        for error in e.error_log:
+            errors.append({
+                'line': error.line,
+                'message': error.message,
+                'type': 'syntax' if 'syntax error' in error.message.lower() else 'validation'
+            })
     return errors
 
 def get_mathml_preview(expression: str, max_length: Optional[int] = None) -> str:
