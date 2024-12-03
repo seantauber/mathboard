@@ -38,32 +38,234 @@ generate_explanation:
        - Use prosody-friendly language that flows naturally when spoken
 
     3. Mathematical Display Techniques:
-       - Progressive Building:
-         * Use <mspace linebreak="newline"/> for line breaks
-         * For consecutive line breaks, use multiple mspace elements
-         * Keep original expression visible while showing work below
-         * Show intermediate steps while maintaining context
-         * Build complex expressions step by step
+       - Text and Layout Requirements:
+         * PREFER vertical layout - put text and math on separate lines when possible
+         * Only use inline text when absolutely necessary (e.g., short labels)
+         * ALWAYS wrap text content in <mtext> tags
+         * Include explicit spaces between words inside <mtext> tags
+         * ALWAYS add <mspace width="0.3em"/> after inline <mtext> tags
+         * Never place text directly in MathML without <mtext> tags
+         * Use proper spacing around operators with <mo> tags
+         * Example of vertical layout (preferred):
+           <math>
+             <mtable columnalign="left">
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <mtext>Consider the following equation:</mtext>
+                   </mrow>
+                 </mtd>
+               </mtr>
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <mi>x</mi>
+                     <mo>+</mo>
+                     <mn>2</mn>
+                     <mo>=</mo>
+                     <mn>5</mn>
+                   </mrow>
+                 </mtd>
+               </mtr>
+             </mtable>
+           </math>
+         * Example of inline text (use sparingly):
+           <math>
+             <mtable columnalign="left">
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <mtext>When </mtext>
+                     <mspace width="0.3em"/>
+                     <mi>x</mi>
+                     <mo>=</mo>
+                     <mn>3</mn>
+                     <mtext>, the equation is satisfied.</mtext>
+                     <mspace width="0.3em"/>
+                   </mrow>
+                 </mtd>
+               </mtr>
+             </mtable>
+           </math>
+
+       - Multi-line Content Structure:
+         * Use <mtable> for multi-line content
+         * Each line goes in <mtr><mtd><mrow>...</mrow></mtd></mtr>
+         * Set columnalign="left" for left-aligned equations
+         * Example:
+           <math>
+             <mtable columnalign="left">
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <mtext>Let's solve this equation:</mtext>
+                   </mrow>
+                 </mtd>
+               </mtr>
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <mn>2</mn><mi>x</mi><mo>+</mo><mn>3</mn><mi>y</mi><mo>=</mo><mn>8</mn>
+                   </mrow>
+                 </mtd>
+               </mtr>
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <mn>4</mn><mi>x</mi><mo>-</mo><mn>5</mn><mi>y</mi><mo>=</mo><mn>2</mn>
+                   </mrow>
+                 </mtd>
+               </mtr>
+             </mtable>
+           </math>
        
        - Visual Emphasis:
-         * Use mathcolor="blue" for highlighting
-         * Use consistent color meanings (e.g., blue for current focus)
-         * Use <menclose notation="box"> for boxing important elements
-         * Use <mtext> for annotations with proper spacing
-         * Example: <math><mrow><mtext>This is </mtext><mi mathcolor="blue">x</mi><mtext> squared</mtext></mrow></math>
+         * Color Usage (optimized for white background):
+           - Current focus: mathcolor="#0066CC" (medium blue)
+           - Important terms: mathcolor="#CC3300" (dark orange-red)
+           - Completed steps: mathcolor="#006633" (forest green)
+           - Related items: mathcolor="#663399" (royal purple)
+         * Emphasis Techniques:
+           - Use <menclose notation="circle"> to draw attention to terms
+           - Use <menclose notation="box"> for key results/conclusions
+           - Use <munder> for labels and annotations
+           - Combine techniques: e.g., colored circles for maximum emphasis
+         * Match Visual Emphasis to Narration:
+           - Highlight terms as they're being discussed
+           - Circle groups of terms being compared
+           - Box final results or key conclusions
+           - Use consistent colors throughout explanation
+         * Example:
+           <math>
+             <mtable columnalign="left">
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <mtext>Let's identify the important terms:</mtext>
+                   </mrow>
+                 </mtd>
+               </mtr>
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <menclose notation="circle" mathcolor="#0066CC">
+                       <msup><mi>x</mi><mn>2</mn></msup>
+                     </menclose>
+                     <mo>+</mo>
+                     <mn>5</mn>
+                     <mi>x</mi>
+                     <mo>+</mo>
+                     <mn>6</mn>
+                   </mrow>
+                 </mtd>
+               </mtr>
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <mtext>These terms are similar:</mtext>
+                   </mrow>
+                 </mtd>
+               </mtr>
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <menclose notation="circle" mathcolor="#663399">
+                       <mrow>
+                         <mn>5</mn>
+                         <mi>x</mi>
+                       </mrow>
+                     </menclose>
+                     <mo>+</mo>
+                     <mn>6</mn>
+                     <mo>+</mo>
+                     <menclose notation="circle" mathcolor="#663399">
+                       <mrow>
+                         <mn>2</mn>
+                         <mi>x</mi>
+                       </mrow>
+                     </menclose>
+                   </mrow>
+                 </mtd>
+               </mtr>
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <mtext>Our final result:</mtext>
+                   </mrow>
+                 </mtd>
+               </mtr>
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <menclose notation="box" mathcolor="#006633">
+                       <mrow>
+                         <mn>7</mn>
+                         <mi>x</mi>
+                         <mo>+</mo>
+                         <mn>6</mn>
+                       </mrow>
+                     </menclose>
+                   </mrow>
+                 </mtd>
+               </mtr>
+             </mtable>
+           </math>
        
        - Layout Structure:
-         * Original problem/expression typically at the top
-         * Working steps shown below using line breaks
+         * Use <mtable> for organizing content vertically
+         * Put explanatory text on separate lines from math
+         * Original problem/expression at the top
+         * Working steps shown below in separate rows
          * Important results or conclusions emphasized
          * Clear visual hierarchy in multi-line displays
-         * Use proper spacing between elements
+         * Example:
+           <math>
+             <mtable columnalign="left">
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <mtext>Let's add these fractions:</mtext>
+                   </mrow>
+                 </mtd>
+               </mtr>
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <mfrac>
+                       <mn>1</mn>
+                       <mn>2</mn>
+                     </mfrac>
+                     <mo>+</mo>
+                     <mfrac>
+                       <mn>1</mn>
+                       <mn>3</mn>
+                     </mfrac>
+                   </mrow>
+                 </mtd>
+               </mtr>
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <mtext>First, we need a common denominator:</mtext>
+                   </mrow>
+                 </mtd>
+               </mtr>
+               <mtr>
+                 <mtd>
+                   <mrow>
+                     <mn mathcolor="#0066CC">6</mn>
+                   </mrow>
+                 </mtd>
+               </mtr>
+             </mtable>
+           </math>
 
     4. Step Structure:
        - First step:
          * Clear introduction of the concept
          * Include "step by step" in the introduction
          * Present the initial problem clearly
+         * Put introductory text on its own line
        
        - Subsequent steps should:
          * Show complete board state (including previous work when relevant)
@@ -71,8 +273,9 @@ generate_explanation:
          * Use visual emphasis to guide attention
          * Connect verbal explanation to highlighted elements
          * Break down complex operations into smaller parts
-         * Use multiple lines to show work progression
+         * Use table structure for multi-line progression
          * Verify mathematical correctness at each step
+         * Put explanatory text on separate lines from mathematical expressions
 
     5. Format Requirements:
        natural: 
@@ -80,11 +283,14 @@ generate_explanation:
          - NO mathematical symbols or notation
          - NO special characters except standard punctuation
        math: 
-         - MUST contain complete board state for each step
+         - MUST use <mtable> for multi-line content
+         - MUST wrap each line in <mtr><mtd><mrow>...</mrow></mtd></mtr>
+         - MUST use columnalign="left" for aligned equations
+         - MUST wrap ALL text content in <mtext> tags with proper spacing
+         - MUST add <mspace width="0.3em"/> after inline <mtext> tags
+         - PREFER putting text on separate lines from math
          - Valid MathML with correct syntax and proper spacing
          - Use mathcolor attribute for colored text
-         - Use <mtext> for text mode with proper spacing
-         - Use <mspace linebreak="newline"/> for line breaks
          - Include all previous relevant work
          - Ensure all mathematical expressions are correct
 
@@ -96,69 +302,97 @@ generate_explanation:
        - Break down complex concepts into digestible pieces
        - Use color and emphasis to guide understanding
        - Verify mathematical accuracy throughout explanation
+       - Maintain clear visual separation between text and math
 
-    Example MathML Formatting:
+    Example Multi-step Solution:
     <math>
-      <mrow>
-        <mtext>The least common denominator is: </mtext>
-        <mn mathcolor="blue">6</mn>
-        <mspace linebreak="newline"/>
-        <mfrac>
-          <mn>1</mn>
-          <mn>2</mn>
-        </mfrac>
-        <mo>=</mo>
-        <mfrac>
-          <mrow><mn>1</mn><mo>⋅</mo><mn mathcolor="blue">3</mn></mrow>
-          <mrow><mn>2</mn><mo>⋅</mo><mn mathcolor="blue">3</mn></mrow>
-        </mfrac>
-        <mo>=</mo>
-        <mfrac>
-          <mn mathcolor="blue">3</mn>
-          <mn mathcolor="blue">6</mn>
-        </mfrac>
-      </mrow>
-    </math>
-
-    Multi-line Example:
-    <math>
-      <mrow>
-        <msup><mi>x</mi><mn>2</mn></msup>
-        <mo>+</mo>
-        <mn>5</mn>
-        <mi>x</mi>
-        <mo>+</mo>
-        <mn>6</mn>
-        <mo>=</mo>
-        <mn>0</mn>
-        <mspace linebreak="newline"/>
-        <mspace linebreak="newline"/>
-        <mtext>Factor into: </mtext>
-        <mo>(</mo>
-        <mi>x</mi>
-        <mo>+</mo>
-        <mn>2</mn>
-        <mo>)</mo>
-        <mo>(</mo>
-        <mi>x</mi>
-        <mo>+</mo>
-        <mn>3</mn>
-        <mo>)</mo>
-        <mo>=</mo>
-        <mn>0</mn>
-        <mspace linebreak="newline"/>
-        <mspace linebreak="newline"/>
-        <mtext>Solutions: </mtext>
-        <mi>x</mi>
-        <mo>=</mo>
-        <mo>-</mo>
-        <mn>2</mn>
-        <mtext> or </mtext>
-        <mi>x</mi>
-        <mo>=</mo>
-        <mo>-</mo>
-        <mn>3</mn>
-      </mrow>
+      <mtable columnalign="left">
+        <mtr>
+          <mtd>
+            <mrow>
+              <mtext>Let's solve this quadratic equation:</mtext>
+            </mrow>
+          </mtd>
+        </mtr>
+        <mtr>
+          <mtd>
+            <mrow>
+              <msup><mi>x</mi><mn>2</mn></msup>
+              <mo>+</mo>
+              <mn>5</mn>
+              <mi>x</mi>
+              <mo>+</mo>
+              <mn>6</mn>
+              <mo>=</mo>
+              <mn>0</mn>
+            </mrow>
+          </mtd>
+        </mtr>
+        <mtr>
+          <mtd>
+            <mrow>
+              <mtext>Let's identify each term:</mtext>
+            </mrow>
+          </mtd>
+        </mtr>
+        <mtr>
+          <mtd>
+            <mrow>
+              <msup><mi mathcolor="#0066CC">x</mi><mn>2</mn></msup>
+              <mtext> is our squared term</mtext>
+              <mspace width="0.3em"/>
+            </mrow>
+          </mtd>
+        </mtr>
+        <mtr>
+          <mtd>
+            <mrow>
+              <mn mathcolor="#0066CC">5</mn>
+              <mi mathcolor="#0066CC">x</mi>
+              <mtext> is our linear term</mtext>
+              <mspace width="0.3em"/>
+            </mrow>
+          </mtd>
+        </mtr>
+        <mtr>
+          <mtd>
+            <mrow>
+              <mn mathcolor="#0066CC">6</mn>
+              <mtext> is our constant term</mtext>
+              <mspace width="0.3em"/>
+            </mrow>
+          </mtd>
+        </mtr>
+        <mtr>
+          <mtd>
+            <mrow>
+              <mtext>Now we can factor this into:</mtext>
+            </mrow>
+          </mtd>
+        </mtr>
+        <mtr>
+          <mtd>
+            <mrow>
+              <menclose notation="box" mathcolor="#006633">
+                <mrow>
+                  <mo>(</mo>
+                  <mi>x</mi>
+                  <mo>+</mo>
+                  <mn>2</mn>
+                  <mo>)</mo>
+                  <mo>(</mo>
+                  <mi>x</mi>
+                  <mo>+</mo>
+                  <mn>3</mn>
+                  <mo>)</mo>
+                  <mo>=</mo>
+                  <mn>0</mn>
+                </mrow>
+              </menclose>
+            </mrow>
+          </mtd>
+        </mtr>
+      </mtable>
     </math>
 
   agent: math_teacher
@@ -187,86 +421,103 @@ optimize_visual_narrative:
 
     Frame 1:
     natural: Let's start with a quadratic equation in standard form.
-    math: <math><mrow><mi>a</mi><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>b</mi><mi>x</mi><mo>+</mo><mi>c</mi><mo>=</mo><mn>0</mn></mrow></math>
+    math: <math>
+      <mtable columnalign="left">
+        <mtr>
+          <mtd>
+            <mrow>
+              <mtext>The standard form is:</mtext>
+            </mrow>
+          </mtd>
+        </mtr>
+        <mtr>
+          <mtd>
+            <mrow>
+              <mi>a</mi><msup><mi>x</mi><mn>2</mn></msup>
+              <mo>+</mo>
+              <mi>b</mi><mi>x</mi>
+              <mo>+</mo>
+              <mi>c</mi>
+              <mo>=</mo>
+              <mn>0</mn>
+            </mrow>
+          </mtd>
+        </mtr>
+      </mtable>
+    </math>
 
     Frame 2:
     natural: First, look at the coefficient of x squared, which we call a.
-    math: <math><mrow><mi mathcolor="blue">a</mi><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>b</mi><mi>x</mi><mo>+</mo><mi>c</mi><mo>=</mo><mn>0</mn></mrow></math>
+    math: <math>
+      <mtable columnalign="left">
+        <mtr>
+          <mtd>
+            <mrow>
+              <mtext>Looking at the first term:</mtext>
+            </mrow>
+          </mtd>
+        </mtr>
+        <mtr>
+          <mtd>
+            <mrow>
+              <mi mathcolor="#0066CC">a</mi><msup><mi>x</mi><mn>2</mn></msup>
+              <mo>+</mo>
+              <mi>b</mi><mi>x</mi>
+              <mo>+</mo>
+              <mi>c</mi>
+              <mo>=</mo>
+              <mn>0</mn>
+            </mrow>
+          </mtd>
+        </mtr>
+      </mtable>
+    </math>
 
     Frame 3:
     natural: These three terms form our quadratic expression.
     math: <math>
-      <mrow>
-        <munder>
-          <mrow><mi mathcolor="blue">a</mi><msup><mi>x</mi><mn>2</mn></msup></mrow>
-          <mtext>first term</mtext>
-        </munder>
-        <mo>+</mo>
-        <munder>
-          <mrow><mi>b</mi><mi>x</mi></mrow>
-          <mtext>second term</mtext>
-        </munder>
-        <mo>+</mo>
-        <munder>
-          <mi>c</mi>
-          <mtext>third term</mtext>
-        </munder>
-        <mo>=</mo>
-        <mn>0</mn>
-      </mrow>
-    </math>
-
-    Visual Focus Example - Factoring:
-
-    Frame 1:
-    natural: To factor this expression, we need to find numbers that multiply to give us positive 6 and add to give us positive 5.
-    math: <math>
-      <mrow>
-        <msup><mi>x</mi><mn>2</mn></msup>
-        <mo>+</mo>
-        <mn>5</mn>
-        <mi>x</mi>
-        <mo>+</mo>
-        <mn>6</mn>
-        <mo>=</mo>
-        <mn>0</mn>
-        <mspace linebreak="newline"/>
-        <mtext>Need: product = 6, sum = 5</mtext>
-      </mrow>
-    </math>
-
-    Frame 2:
-    natural: Let's list out the factors of 6 and find the pair that adds to 5.
-    math: <math>
-      <mrow>
-        <msup><mi>x</mi><mn>2</mn></msup>
-        <mo>+</mo>
-        <mn>5</mn>
-        <mi>x</mi>
-        <mo>+</mo>
-        <mn>6</mn>
-        <mo>=</mo>
-        <mn>0</mn>
-        <mspace linebreak="newline"/>
-        <mtext>Factors of 6:</mtext>
-        <mspace linebreak="newline"/>
-        <mn>1</mn>
-        <mo>×</mo>
-        <mn>6</mn>
-        <mo>=</mo>
-        <mn>6</mn>
-        <mtext>, sum = 7</mtext>
-        <mspace linebreak="newline"/>
-        <mrow mathcolor="blue">
-          <mn>2</mn>
-          <mo>×</mo>
-          <mn>3</mn>
-          <mo>=</mo>
-          <mn>6</mn>
-          <mtext>, sum = 5</mtext>
-        </mrow>
-        <mo>✓</mo>
-      </mrow>
+      <mtable columnalign="left">
+        <mtr>
+          <mtd>
+            <mrow>
+              <mtext>Let's identify each term:</mtext>
+            </mrow>
+          </mtd>
+        </mtr>
+        <mtr>
+          <mtd>
+            <mrow>
+              <mi>a</mi><msup><mi>x</mi><mn>2</mn></msup>
+              <mo>+</mo>
+              <mi>b</mi><mi>x</mi>
+              <mo>+</mo>
+              <mi>c</mi>
+              <mo>=</mo>
+              <mn>0</mn>
+            </mrow>
+          </mtd>
+        </mtr>
+        <mtr>
+          <mtd>
+            <mrow>
+              <munder>
+                <mrow><mi mathcolor="#0066CC">a</mi><msup><mi>x</mi><mn>2</mn></msup></mrow>
+                <mtext>first term</mtext>
+              </munder>
+              <mo>+</mo>
+              <munder>
+                <mrow><mi>b</mi><mi>x</mi></mrow>
+                <mtext>second term</mtext>
+              </munder>
+              <mo>+</mo>
+              <munder>
+                <mi>c</mi>
+                <mtext>third term</mtext>
+              </munder>
+            </mrow>
+          </mtd>
+        </mtr>
+      </mtable>
     </math>
 
     Requirements:
@@ -285,16 +536,25 @@ optimize_visual_narrative:
       - Maintain context while adding new elements
       - Show clear visual evolution
       - Use appropriate pacing
+      - Put text and math on separate lines when possible
 
     3. Enhancement Techniques:
-      - Colors (mathcolor attribute)
+      - Colors (optimized for white background):
+        * Current focus: mathcolor="#0066CC" (medium blue)
+        * Important terms: mathcolor="#CC3300" (dark orange-red)
+        * Completed steps: mathcolor="#006633" (forest green)
+        * Related items: mathcolor="#663399" (royal purple)
+      - Emphasis techniques:
+        * <menclose notation="circle"> for highlighting terms
+        * <menclose notation="box"> for key results
+        * <munder> for labels
+        * Combine color with emphasis for maximum effect
       - Boxes (<menclose notation="box">)
       - Underscores (<munder>)
-      - Annotations (<mtext>)
+      - Annotations (<mtext> with <mspace width="0.3em"/> after inline text)
       - Arrows (→, ↓)
       - Alignment using <mtable> and <mtr> for related equations
       - Checkmarks (✓) for completed steps
-      - Line breaks (<mspace linebreak="newline"/>)
 
     4. Frame Guidelines:
       - Each frame must contain complete board state
@@ -304,6 +564,9 @@ optimize_visual_narrative:
       - Visual elements should support spoken text
       - Proper spacing between elements
       - Verify mathematical correctness in each frame
+      - ALWAYS wrap text content in <mtext> tags with proper spacing
+      - ALWAYS add <mspace width="0.3em"/> after inline <mtext> tags
+      - PREFER putting text on separate lines from math
 
     5. Visual Design Principles:
       - Focus attention on current concept
@@ -311,6 +574,8 @@ optimize_visual_narrative:
       - Keep related elements visually connected
       - Use consistent visual language
       - Maintain clear layout with adequate spacing
+      - Ensure proper text formatting with <mtext> tags
+      - Prefer vertical layout with text and math on separate lines
   agent: math_teacher
   expected_output: "JSON with enhanced visual narrative"
   context:
